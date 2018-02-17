@@ -3,7 +3,7 @@
 // @namespace    Mountyhall
 // @description  Assistant Baroufle
 // @author       Dabihul
-// @version      0.0.28
+// @version      0.1.1
 // @include      */mountyhall/MH_Play/Actions/Competences/Play_a_Competence43b*
 // @grant        none
 // ==/UserScript==
@@ -20,76 +20,110 @@ var
 	
 var BDD_Sons = {
 //	"Son": {
-//		option      : "ajouté dans <option>"
-//		description : "description"
+//		seuil: s'il y a un seuil (number),
+//		multiple: si le seuil s'applique plusieurs fois (boolean),
+//		effet: {
+//			"carac": multiplicateur (number),
+//		},
+//		description: "description"
 //	},
 	"Bababoum"    : {
-		option      : "Att +x",
-		description : "Attaque +1 par seuil dépensé"
+		effet: {
+			"Att": 1
+		},
+		description: "Attaque +1 par seuil dépensé"
 	},
 	"Booong"      : {
-		option      : "Deg +x | Esq -x",
-		description : "Dégâts +1 | Esquive -1 par seuil dépensé"
+		effet: {
+			"Deg": 1,
+			"Esq": -1
+		},
+		description: "Dégâts +1 | Esquive -1 par seuil dépensé"
 	},
 	"Gaaaw"       : {
-		option      : "Fatigue +x",
-		description : "Fatigue +1 par seuil dépensé"
+		effet: {
+			"Fatigue": 1
+		},
+		description: "Fatigue +1 par seuil dépensé"
 	},
 	"Huitsch"     : {
-		option      : "Deg -x",
-		description : "Dégâts -1 par seuil dépensé"
+		effet: {
+			"Deg": -1
+		},
+		description: "Dégâts -1 par seuil dépensé"
 	},
 	"Kliketiiik"  : {
-		option      : "Esq -x | Concentr. -x",
-		description : "Esq -1 | Concentration -1 par seuil dépensé"
+		effet: {
+			"Esq": -1,
+			"Concentr.": -1
+		},
+		description: "Esq -1 | Concentration -1 par seuil dépensé"
 	},
 	"Krouiiik"    : {
-		doubler     : true,
-		option      : "Concentration -x",
-		description : "Concentration -2 par seuil dépensé"
+		effet: {
+			"Concentr.": -2
+		},
+		description: "Concentration -2 par seuil dépensé"
 	},
 	"Kssksss"     : {
-		option      : "Esq +x",
-		description : "Esquive +1 par seuil dépensé"
+		effet: {
+			"Esq": 1
+		},
+		description: "Esquive +1 par seuil dépensé"
 	},
 	"Praaaouuut"  : {
-		option      : "Reg -x",
-		description : "Régénération +1 par seuil dépensé"
+		effet: {
+			"Reg": 1
+		},
+		description: "Régénération +1 par seuil dépensé"
 	},
 	"Sssrileur"   : {
-		seuil       : 6,
-		option      : "Désinvi.",
-		description : "Rend visible (seuil 6)"
+		seuil: 6,
+		effet: {
+			"Désinvi.": 0.17
+		},
+		description: "Rend visible (seuil 6)"
 	},
 	"Tagadagada"  : {
-		seuil       : 2,
-		multiple    : true,
-		option      : "Durée +x",
-		description : "Durée +1 par 2 seuils dépensés"
+		seuil: 2,
+		multiple: true,
+		effet: {
+			"Durée": 0.5
+		},
+		description: "Durée +1 par 2 seuils dépensés"
 	},
 	"Tuutuuuut"   : {
-		option      : "Att -x",
-		description : "Attaque -1 par seuil dépensé"
+		effet: {
+			"Att": -1
+		},
+		description: "Attaque -1 par seuil dépensé"
 	},
 	"Whaaag"      : {
-		seuil       : 4,
-		multiple    : true,
-		option      : "Portée +x",
-		description : "Portée horizontale +1 par 4 seuils dépensés"
+		seuil: 4,
+		multiple: true,
+		effet: {
+			"Portée": 0.25
+		},
+		description: "Portée horizontale +1 par 4 seuils dépensés"
 	},
 	"Whoooom"     : {
-		doubler     : true,
-		option      : "Concentr. +x",
-		description : "Concentration +2 par seuil dépensé"
+		effet: {
+			"Concentr.": 2
+		},
+		description: "Concentration +2 par seuil dépensé"
 	},
 	"Ytseukayndof": {
-		seuil       : 2,
-		option      : "BMM",
-		description : "Rend les bonus magiques (seuil 2)"
+		seuil: 2,
+		effet: {
+			"BMM": 0.5
+		},
+		description: "Rend les bonus magiques (seuil 2)"
 	},
 	"Zbouing"     : {
-		option      : "Reg +x",
-		description : "Régénération +1 par seuil dépensé"
+		effet: {
+			"Reg": 1
+		},
+		description: "Régénération +1 par seuil dépensé"
 	}
 }
 
@@ -111,6 +145,11 @@ function epure(texte) {
 		replace(/[ùûü]/g, 'u');
 }
 
+function relatif(num) {
+// Force l'affichage du signe d'un relatif
+	num = Number(num);
+	return (isNaN(num) || num<0) ? String(num) : "+"+num;
+}
 
 //------------------------------ Gestion du DOM ------------------------------//
 
@@ -177,28 +216,43 @@ function getNombreDePAs() {
 
 function enrichirListesSons() {
 	var
-		i=1, j, son, option, texte,
+		i=1, j, option, son, texte, carac,
 		selects = document.getElementsByName("ai_N1");
 	
 	while(selects[0]) {
 		for(j=0 ; j<selects[0].options.length ; j++) {
 			option = selects[0].options[j];
-			// Ajouter les données de BDD_Sons
-			for(son in BDD_Sons) {
-				if(option.textContent.indexOf(son)==-1) {
-					continue;
-				}
-				texte = BDD_Sons[son].option;
-				if(!BDD_Sons[son].seuil) {
-					if(BDD_Sons[son].doubler) {
-						texte = texte.replace(/x/,2*i);
-					} else {
-						texte = texte.replace(/x/g,i);
-					}
-				}
-				appendText(option, " ("+texte+")");
-				break;
+			son = option.textContent;
+			if(son.indexOf("-")!=-1) {
+				son = son.replace(/-/,"");
 			}
+			son = trim(son);
+			
+			if(!BDD_Sons[son]) {
+				window.console.warn(
+					"[mmassistant] Le son "+son+" est inconnu"
+				);
+				continue;
+			}
+			
+			// Ajouter les données de BDD_Sons
+			texte = " (";
+			for(effet in BDD_Sons[son].effet) {
+				if(BDD_Sons[son].seuil) {
+					if(BDD_Sons[son].multiple) {
+						texte += effet+" +?";
+					} else {
+						texte += effet;
+					}
+				} else {
+					if(texte.length>2) {
+						texte += " | ";
+					}
+					texte += effet+" "+relatif(BDD_Sons[son].effet[effet]*i);
+				}
+			}
+			texte += ")";
+			appendText(option, texte);
 		}
 		i++;
 		selects = document.getElementsByName("ai_N"+i);
