@@ -3,13 +3,13 @@
 // @namespace    Mountyhall
 // @description  Assistant Baroufle
 // @author       Dabihul
-// @version      0.0.27
+// @version      0.0.28
 // @include      */mountyhall/MH_Play/Actions/Competences/Play_a_Competence43b*
 // @grant        none
 // ==/UserScript==
 
 
-// Variables Globales --------------------------------------------------------//
+//---------------------------- Variables Globales ----------------------------//
 
 var WHEREARTTHOU = window.location.pathname;
 window.console.log("[Baroufleur] Script ON! sur : " + WHEREARTTHOU);
@@ -94,7 +94,7 @@ var BDD_Sons = {
 }
 
 
-// Utilitaires génériques ----------------------------------------------------//
+//-------------------------- Utilitaires génériques --------------------------//
 
 function trim(str) {
 	return str.replace(/(^\s*)|(\s*$)/g,'');
@@ -112,7 +112,7 @@ function epure(texte) {
 }
 
 
-// Gestion du DOM ------------------------------------------------------------//
+//------------------------------ Gestion du DOM ------------------------------//
 
 function insertBefore(next, el) {
 	next.parentNode.insertBefore(el, next);
@@ -129,7 +129,7 @@ function appendText(paren, text, bold) {
 }
 
 
-// Extraction de données -----------------------------------------------------//
+//-------------------------- Extraction de données ---------------------------//
 
 function getSonsDisponibles() {
 // Extrait la liste des sons disponibles pour Baroufler
@@ -173,7 +173,7 @@ function getNombreDePAs() {
 }
 
 
-// Enrichissement des listes -------------------------------------------------//
+//------------------------ Enrichissement des listes -------------------------//
 
 function enrichirListesSons() {
 	var
@@ -185,18 +185,19 @@ function enrichirListesSons() {
 			option = selects[0].options[j];
 			// Ajouter les données de BDD_Sons
 			for(son in BDD_Sons) {
-				if(
-					!BDD_Sons[son].seuil &&
-					option.textContent.indexOf(son)!=-1
-				) {
-					if(BDD_Sons[son].doubler) {
-						texte = BDD_Sons[son].option.replace(/x/,2*i);
-					} else {
-						texte = BDD_Sons[son].option.replace(/x/g,i);
-					}
-					appendText(option, " ("+texte+")");
-					break;
+				if(option.textContent.indexOf(son)==-1) {
+					continue;
 				}
+				texte = BDD_Sons[son].option;
+				if(!BDD_Sons[son].seuil) {
+					if(BDD_Sons[son].doubler) {
+						texte = texte.replace(/x/,2*i);
+					} else {
+						texte = texte.replace(/x/g,i);
+					}
+				}
+				appendText(option, " ("+texte+")");
+				break;
 			}
 		}
 		i++;
@@ -204,7 +205,7 @@ function enrichirListesSons() {
 	}
 }
 
-// Code actif ----------------------------------------------------------------//
+//-------------------------------- Code actif --------------------------------//
 
 getSonsDisponibles();
 getNombreDePAs();
