@@ -3,7 +3,7 @@
 // @namespace    Mountyhall
 // @description  Assistant Baroufle
 // @author       Dabihul
-// @version      0.1.1
+// @version      0.1.2
 // @include      */mountyhall/MH_Play/Actions/Competences/Play_a_Competence43b*
 // @grant        none
 // ==/UserScript==
@@ -73,9 +73,9 @@ var BDD_Sons = {
 	},
 	"Praaaouuut"  : {
 		effet: {
-			"Reg": 1
+			"Reg": -1
 		},
-		description: "Régénération +1 par seuil dépensé"
+		description: "Régénération -1 par seuil dépensé"
 	},
 	"Sssrileur"   : {
 		seuil: 6,
