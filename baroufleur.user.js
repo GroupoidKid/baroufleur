@@ -3,7 +3,7 @@
 // @namespace    Mountyhall
 // @description  Assistant Baroufle
 // @author       Dabihul
-// @version      0.2.1.1
+// @version      0.2.2.0
 // @updateURL    http://weblocal/scripts_externes/baroufleur/baroufleur.user.js
 // @include      */mountyhall/MH_Play/Actions/Competences/Play_a_Competence43b*
 // @grant        none
@@ -16,9 +16,12 @@ var WHEREARTTHOU = window.location.pathname;
 window.console.log("[Baroufleur] Script ON! sur : " + WHEREARTTHOU);
 
 var
+	// Liste des Sons disponibles (clé = code MH du son)
 	objSonsDisponibles = {
 		"dummy": "not an array, sicko!"
 	},
+	
+	// Nombre de PA du Baroufle
 	nombreDePAs = 3;
 	
 const
@@ -147,6 +150,7 @@ Storage.prototype.getObject = function(key) {
 }
 
 function epure(texte) {
+// Supprime les caractères spéciaux
 	return texte.
 		replace(/[àâä]/g, 'a').
 		replace(/Â/g, 'A').
@@ -166,6 +170,8 @@ function relatif(num) {
 //------------------------------ Gestion du DOM ------------------------------//
 
 function appendText(parent, text, bold, italic) {
+// Ajoute un textNode contenant 'text' à 'parent',
+// si nécessaire entre des balises gras et/ou italique.
 	if(bold) {
 		var b = document.createElement('b');
 		parent.appendChild(b);
@@ -182,7 +188,10 @@ function appendText(parent, text, bold, italic) {
 //-------------------------- Extraction de données ---------------------------//
 
 function getSonsDisponibles() {
-// Extrait la liste des sons disponibles pour Baroufler
+// Extrait la liste des sons disponibles pour Baroufler.
+// 
+// Nécessite: -
+// Effectue: initialise objSonsDisponibles
 	try {
 		var selectPremierSon = document.getElementsByName("ai_N1")[0];
 	} catch(e) {
@@ -207,24 +216,16 @@ function getSonsDisponibles() {
 	return true;
 }
 
-function getNombreDePAs() {
-// Récupère le nombre de PAs du Baroufle en testant le nombre de selects
-// Doit y avoir moyen de le récupérer direct dans la page?
-	var
-		selects,
-		i=3;
-		
-	do {
-		i++;
-		selects = document.getElementsByName("ai_N"+i);
-	} while(selects[0]);
-	
-	nombreDePAs = i-1;
-}
-
 //------------------------ Enrichissement des listes -------------------------//
 
-function enrichirListesSons() {
+function initialiseListesSons() {
+// Initialisation générale du script.
+// 
+// Nécessite: BDD_Sons
+// Effectue:
+// - ajoute les données de BM dans les selects
+// - ajoute les Handlers sur les selects
+// - initialise nombreDePAs
 	var
 		i=1, j, option, son, texte, effet,
 		selects = document.getElementsByName("ai_N1");
@@ -233,7 +234,7 @@ function enrichirListesSons() {
 		for(j=0 ; j<selects[0].options.length ; j++) {
 			option = selects[0].options[j];
 			if(!option.value) {
-			// Ignorer les "Choisissez"
+				// Ignorer les "Choisissez une note"
 				continue;
 			}
 			
@@ -276,14 +277,24 @@ function enrichirListesSons() {
 					.replace(/BM Magiques/, "BMM")
 			);
 		}
+		
+		// Ajout du Handler
+		selects[0].onchange = onSelectChange;
+		
+		// Passage au select suivant
 		i++;
 		selects = document.getElementsByName("ai_N"+i);
 	}
+	
+	// Décompte du nombre de PAs du Baroufle (=nb de selects)
+	nombreDePAs = i-1;
 }
 
 //------------------------- Gestion de l'effet total -------------------------//
 
-function ajouteTrTotal() {
+function ajouteZoneTotal() {
+// Crée la zone ou le total des effets est affiché.
+// Nécessite: nombreDePAs
 	var
 		table, tr, td, ul;
 	
@@ -317,19 +328,34 @@ function ajouteTrTotal() {
 }
 
 function majEffetTotal() {
+// Mise à jour de la liste des effets (baroufleur_effettotal)
+// en fonction des sons sélectionnés.
+// 
+// Nécessite:
+// - la mise en place de la liste (ul) baroufleur_effettotal
+// - BDD_Sons
+// - objSonsDisponibles
+// - nombreDePAs
+// Effectue: mise à jour de l'ul
 	var
-		i=1, numero, son, effet,
+		// Scope = fonction
 		objEffetsTotaux = {}, objSeuils = {},
+		
+		// Scope = while inital
+		i=1, numero, son, effet,
 		selects = document.getElementsByName("ai_N1"),
+		
+		// Scope = affichage final
+		ordreAlphabétique = [],
+		//son, effet,
 		li, texte, italic, total, seuil, q, r,
 		ulTotal = document.getElementById("baroufleur_effettotal");
 	
+	// Récupération des effets des sons sélectionnés
 	while(selects[0]) {
 		numero = selects[0].value;
 		if(numero) {
 			son = objSonsDisponibles[numero];
-//			window.console.debug("références", numero, son);
-//			window.console.debug("BDD", BDD_Sons[son].effet);
 			for(effet in BDD_Sons[son].effet) {
 				if(objEffetsTotaux[effet]) {
 					objEffetsTotaux[effet] += BDD_Sons[son].effet[effet]*i;
@@ -348,19 +374,19 @@ function majEffetTotal() {
 		selects = document.getElementsByName("ai_N"+i);
 	}
 	
-//	window.console.debug("totaux", objEffetsTotaux);
-//	window.console.debug("seuils", objSeuils);
-	
+	// Màj de la liste baroufleur_effettotal:
+	// Effacement ancienne liste
 	while(ulTotal.firstChild) {
 		ulTotal.removeChild(ulTotal.firstChild);
 	}
 	
-	ordreAlphabétique = [];
+	// Création de l'ordre alphabétique des effets
 	for(effet in objEffetsTotaux) {
 		ordreAlphabétique.push(effet);
 	}
 	ordreAlphabétique.sort();
 	
+	// Génération de la liste des effets
 	for(i=0 ; i<ordreAlphabétique.length ; i++) {
 		texte = effet = ordreAlphabétique[i];
 		total = objEffetsTotaux[effet];
@@ -391,18 +417,6 @@ function majEffetTotal() {
 
 //--------------------------------- Handlers ---------------------------------//
 
-function initialiseHandlers() {
-	var
-		i=1,
-		selects = document.getElementsByName("ai_N1");
-	
-	while(selects[0]) {
-		selects[0].onchange = onSelectChange;
-		i++;
-		selects = document.getElementsByName("ai_N"+i);
-	}
-}
-
 function onSelectChange() {
 	majEffetTotal();
 }
@@ -410,12 +424,11 @@ function onSelectChange() {
 //-------------------------------- Code actif --------------------------------//
 
 getSonsDisponibles();
-getNombreDePAs();
+ajouteZoneTotal();
+initialiseListesSons();
+
 window.console.debug(objSonsDisponibles);
 window.console.debug(nombreDePAs);
 
-enrichirListesSons();
-ajouteTrTotal();
-initialiseHandlers();
-
 window.console.log("[Baroufleur] Script OFF sur : " + WHEREARTTHOU);
+
