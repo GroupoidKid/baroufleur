@@ -3,7 +3,7 @@
 // @namespace    Mountyhall
 // @description  Assistant Baroufle
 // @author       Dabihul
-// @version      0.1.2.1
+// @version      0.2.0.0
 // @updateURL    http://weblocal/scripts_externes/baroufleur/baroufleur.user.js
 // @include      */mountyhall/MH_Play/Actions/Competences/Play_a_Competence43b*
 // @grant        none
@@ -16,10 +16,13 @@ var WHEREARTTHOU = window.location.pathname;
 window.console.log("[Baroufleur] Script ON! sur : " + WHEREARTTHOU);
 
 var
-	objSonsDisponibles = {},
+	objSonsDisponibles = {
+		"dummy": "not an array, sicko!"
+	},
 	nombreDePAs = 3;
 	
-var BDD_Sons = {
+const
+	BDD_Sons = {
 //	"Son": {
 //		seuil: s'il y a un seuil (number),
 //		multiple: si le seuil s'applique plusieurs fois (boolean),
@@ -56,13 +59,13 @@ var BDD_Sons = {
 	"Kliketiiik"  : {
 		effet: {
 			"Esq": -1,
-			"Concentr.": -1
+			"Concentration": -1
 		},
 		description: "Esquive -1 | Concentration -1 par seuil dépensé"
 	},
 	"Krouiiik"    : {
 		effet: {
-			"Concentr.": -2
+			"Concentration": -2
 		},
 		description: "Concentration -2 par seuil dépensé"
 	},
@@ -80,8 +83,9 @@ var BDD_Sons = {
 	},
 	"Sssrileur"   : {
 		seuil: 6,
+		multiple: false,
 		effet: {
-			"Désinvi.": 0.17
+			"Rend visible": 1
 		},
 		description: "Rend visible (seuil 6)"
 	},
@@ -89,7 +93,7 @@ var BDD_Sons = {
 		seuil: 2,
 		multiple: true,
 		effet: {
-			"Durée": 0.5
+			"Durée": 1
 		},
 		description: "Durée +1 par 2 seuils dépensés"
 	},
@@ -103,20 +107,21 @@ var BDD_Sons = {
 		seuil: 4,
 		multiple: true,
 		effet: {
-			"Portée": 0.25
+			"Portée": 1
 		},
 		description: "Portée horizontale +1 par 4 seuils dépensés"
 	},
 	"Whoooom"     : {
 		effet: {
-			"Concentr.": 2
+			"Concentration": 2
 		},
 		description: "Concentration +2 par seuil dépensé"
 	},
 	"Ytseukayndof": {
 		seuil: 2,
+		multiple: false,
 		effet: {
-			"BMM": 0.5
+			"Bonus Magiques": 1
 		},
 		description: "Rend les bonus magiques (seuil 2)"
 	},
@@ -127,7 +132,6 @@ var BDD_Sons = {
 		description: "Régénération +1 par seuil dépensé"
 	}
 }
-
 
 //-------------------------- Utilitaires génériques --------------------------//
 
@@ -141,11 +145,6 @@ Storage.prototype.getObject = function(key) {
     var value = this.getItem(key);
     return value && JSON.parse(value);
 }
-
-// Est dans prototype depuis ES5.1
-//function trim(str) {
-//	return str.replace(/(^\s*)|(\s*$)/g,'');
-//}
 
 function epure(texte) {
 	return texte.
@@ -166,20 +165,19 @@ function relatif(num) {
 
 //------------------------------ Gestion du DOM ------------------------------//
 
-function insertBefore(next, el) {
-	next.parentNode.insertBefore(el, next);
-}
-
-function appendText(paren, text, bold) {
-	if (bold) {
+function appendText(parent, text, bold, italic) {
+	if(bold) {
 		var b = document.createElement('b');
-		b.appendChild(document.createTextNode(text));
-		paren.appendChild(b);
-	} else {
-		paren.appendChild(document.createTextNode(text));
+		parent.appendChild(b);
+		parent = b;
 	}
+	if(italic) {
+		var i = document.createElement('i');
+		parent.appendChild(i);
+		parent = i;
+	}
+	parent.appendChild(document.createTextNode(text));
 }
-
 
 //-------------------------- Extraction de données ---------------------------//
 
@@ -202,7 +200,7 @@ function getSonsDisponibles() {
 			if(texte.indexOf("-")!=-1) {
 				texte = texte.replace(/-/,"").trim();
 			}
-			objSonsDisponibles[texte] = option.value;
+			objSonsDisponibles[option.value] = texte;
 		}
 	}
 	
@@ -224,7 +222,6 @@ function getNombreDePAs() {
 	nombreDePAs = i-1;
 }
 
-
 //------------------------ Enrichissement des listes -------------------------//
 
 function enrichirListesSons() {
@@ -235,6 +232,10 @@ function enrichirListesSons() {
 	while(selects[0]) {
 		for(j=0 ; j<selects[0].options.length ; j++) {
 			option = selects[0].options[j];
+			if(!option.value) {
+			// Ignorer les "Choisissez"
+				continue;
+			}
 			son = option.textContent;
 			if(son.indexOf("-")!=-1) {
 				son = son.replace(/-/,"");
@@ -272,6 +273,124 @@ function enrichirListesSons() {
 	}
 }
 
+//------------------------- Gestion de l'effet total -------------------------//
+
+function ajouteTrTotal() {
+	var
+		inputAction, trAction,
+		trTotal, td, ul;
+	
+	try {
+		inputAction = document.getElementsByName("as_Action")[0],
+		trAction = inputAction.closest("tr");
+	} catch(e) {
+		window.console.error("[Baroufleur] TR d'action non trouvé");
+		return false;
+	}
+	
+	trTotal = document.createElement("tr");
+	trTotal.className = "mh_tdtitre";
+	td = document.createElement("td");
+	td.style.textAlign = "center";
+	td.colSpan = 2;
+	appendText(td, "Effet total maximum:", true);
+	ul = document.createElement("ul");
+	ul.id = "baroufleur_effettotal";
+	td.appendChild(ul);
+	trTotal.appendChild(td);
+	trAction.parentNode.insertBefore(trTotal, trAction);
+	return true;
+}
+
+function majEffetTotal() {
+	var
+		i=1, numero, son, effet,
+		objEffetsTotaux = {}, objSeuils = {},
+		selects = document.getElementsByName("ai_N1"),
+		li, texte, italic, seuil, q, r,
+		ulTotal = document.getElementById("baroufleur_effettotal");
+	
+	while(selects[0]) {
+		numero = selects[0].value;
+		if(numero) {
+			son = objSonsDisponibles[numero];
+//			window.console.debug("références", numero, son);
+//			window.console.debug("BDD", BDD_Sons[son].effet);
+			for(effet in BDD_Sons[son].effet) {
+				if(objEffetsTotaux[effet]) {
+					objEffetsTotaux[effet] += BDD_Sons[son].effet[effet]*i;
+				} else {
+					objEffetsTotaux[effet] = BDD_Sons[son].effet[effet]*i;
+				}
+				if(BDD_Sons[son].seuil && !objSeuils[effet]) {
+					objSeuils[effet] = {
+						seuil: BDD_Sons[son].seuil,
+						multiple: BDD_Sons[son].multiple
+					};
+				}
+			}
+		}
+		i++;
+		selects = document.getElementsByName("ai_N"+i);
+	}
+	
+//	window.console.debug("totaux", objEffetsTotaux);
+//	window.console.debug("seuils", objSeuils);
+	
+	while(ulTotal.firstChild) {
+		ulTotal.removeChild(ulTotal.firstChild);
+	}
+	
+	ordreAlphabétique = [];
+	for(effet in objEffetsTotaux) {
+		ordreAlphabétique.push(effet);
+	}
+	ordreAlphabétique.sort();
+	
+	for(i=0 ; i<ordreAlphabétique.length ; i++) {
+		effet = ordreAlphabétique[i];
+		texte = effet;
+		italic = false;
+		li = document.createElement("li");
+		if(objSeuils[effet]) {
+			seuil = objSeuils[effet].seuil;
+			q = Math.floor(objEffetsTotaux[effet]/seuil);
+			r = Math.floor(objEffetsTotaux[effet]%seuil);
+			if(objSeuils[effet].multiple) {
+				texte += " "+relatif(q);
+				if(r) {
+					texte += " [+"+r+"/"+seuil+"]";
+				}
+			} else if(q==0) {
+				italic = true;
+				texte += " ["+r+"/"+seuil+"]";
+			}
+		} else {
+			texte += " "+relatif(objEffetsTotaux[effet]);
+		}
+		appendText(li, texte, false, italic);
+		ulTotal.appendChild(li);
+	}
+}
+
+//--------------------------------- Handlers ---------------------------------//
+
+function initialiseHandlers() {
+	var
+		i=1,
+		selects = document.getElementsByName("ai_N1");
+	
+	while(selects[0]) {
+		selects[0].onchange = onSelectChange;
+		i++;
+		selects = document.getElementsByName("ai_N"+i);
+	}
+}
+
+function onSelectChange() {
+	majEffetTotal();
+}
+
 //-------------------------------- Code actif --------------------------------//
 
 getSonsDisponibles();
@@ -280,6 +399,8 @@ window.console.debug(objSonsDisponibles);
 window.console.debug(nombreDePAs);
 
 enrichirListesSons();
+ajouteTrTotal();
+initialiseHandlers();
 
 window.console.log("[Baroufleur] Script OFF sur : " + WHEREARTTHOU);
 
