@@ -130,6 +130,17 @@ var BDD_Sons = {
 
 //-------------------------- Utilitaires génériques --------------------------//
 
+// Gestion des objets par Storage
+// https://stackoverflow.com/questions/2010892/storing-objects-in-html5-localstorage#answer-3146971
+Storage.prototype.setObject = function(key, value) {
+    this.setItem(key, JSON.stringify(value));
+}
+
+Storage.prototype.getObject = function(key) {
+    var value = this.getItem(key);
+    return value && JSON.parse(value);
+}
+
 // Est dans prototype depuis ES5.1
 //function trim(str) {
 //	return str.replace(/(^\s*)|(\s*$)/g,'');
