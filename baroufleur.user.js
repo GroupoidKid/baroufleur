@@ -3,7 +3,7 @@
 // @namespace    Mountyhall
 // @description  Assistant Baroufle
 // @author       Dabihul
-// @version      0.2.0.0
+// @version      0.2.1.0
 // @updateURL    http://weblocal/scripts_externes/baroufleur/baroufleur.user.js
 // @include      */mountyhall/MH_Play/Actions/Competences/Play_a_Competence43b*
 // @grant        none
@@ -121,7 +121,7 @@ const
 		seuil: 2,
 		multiple: false,
 		effet: {
-			"Bonus Magiques": 1
+			"BM Magiques": 1
 		},
 		description: "Rend les bonus magiques (seuil 2)"
 	},
@@ -187,7 +187,7 @@ function getSonsDisponibles() {
 		var selectPremierSon = document.getElementsByName("ai_N1")[0];
 	} catch(e) {
 		window.console.error(
-			"[Baroufleur] Liste de sons non trouvée - Abandon"
+			"[Baroufleur] Liste de sons non trouvée - Abandon", e
 		);
 		return false;
 	}
@@ -236,12 +236,13 @@ function enrichirListesSons() {
 			// Ignorer les "Choisissez"
 				continue;
 			}
+			
+			// Identification du son
 			son = option.textContent;
 			if(son.indexOf("-")!=-1) {
 				son = son.replace(/-/,"");
 			}
 			son = son.trim();
-			
 			if(!BDD_Sons[son]) {
 				window.console.warn(
 					"[mmassistant] Le son "+son+" est inconnu"
@@ -249,12 +250,15 @@ function enrichirListesSons() {
 				continue;
 			}
 			
-			// Ajouter les données de BDD_Sons
+			// Ajouter la description
+			option.title = BDD_Sons[son].description;
+			
+			// Ajouter l'effet
 			texte = " (";
 			for(effet in BDD_Sons[son].effet) {
 				if(BDD_Sons[son].seuil) {
 					if(BDD_Sons[son].multiple) {
-						texte += effet+" +?";
+						texte += effet+" +"+i+"/"+BDD_Sons[son].seuil;
 					} else {
 						texte += effet;
 					}
@@ -266,7 +270,11 @@ function enrichirListesSons() {
 				}
 			}
 			texte += ")";
-			appendText(option, texte);
+			appendText(option,
+				texte
+					.replace(/Concentration/, "Conc.")
+					.replace(/BM Magiques/, "BMM")
+			);
 		}
 		i++;
 		selects = document.getElementsByName("ai_N"+i);
@@ -277,28 +285,33 @@ function enrichirListesSons() {
 
 function ajouteTrTotal() {
 	var
-		inputAction, trAction,
-		trTotal, td, ul;
+		table, tr, td, ul;
 	
 	try {
-		inputAction = document.getElementsByName("as_Action")[0],
-		trAction = inputAction.closest("tr");
+		table = document.querySelector("#mhPlay form table");
+		tr = table.rows[1];
+//		tr = document.evaluate(
+//			"//tr[./td[contains(.,'premier')]]",
+//			table, null, 9, null
+//		).singleNodeValue;
 	} catch(e) {
-		window.console.error("[Baroufleur] TR d'action non trouvé");
+		window.console.error(
+			"[Baroufleur] TR d'insertion non trouvé - Abandon", e
+		);
 		return false;
 	}
 	
-	trTotal = document.createElement("tr");
-	trTotal.className = "mh_tdtitre";
-	td = document.createElement("td");
-	td.style.textAlign = "center";
-	td.colSpan = 2;
-	appendText(td, "Effet total maximum:", true);
+	table.rows[0].cells[0].colSpan = 3;
+	table.rows[table.rows.length-1].cells[0].colSpan = 3;
+	td = tr.insertCell(2);
+	td.className = "mh_tdtitre";
+	td.rowSpan = nombreDePAs;
+	td.style.width = "25%";
+	appendText(td, "Effet total:", true);
 	ul = document.createElement("ul");
+	ul.style.textAlign = "left";
 	ul.id = "baroufleur_effettotal";
 	td.appendChild(ul);
-	trTotal.appendChild(td);
-	trAction.parentNode.insertBefore(trTotal, trAction);
 	return true;
 }
 
@@ -307,7 +320,7 @@ function majEffetTotal() {
 		i=1, numero, son, effet,
 		objEffetsTotaux = {}, objSeuils = {},
 		selects = document.getElementsByName("ai_N1"),
-		li, texte, italic, seuil, q, r,
+		li, texte, italic, total, seuil, q, r,
 		ulTotal = document.getElementById("baroufleur_effettotal");
 	
 	while(selects[0]) {
@@ -348,22 +361,24 @@ function majEffetTotal() {
 	ordreAlphabétique.sort();
 	
 	for(i=0 ; i<ordreAlphabétique.length ; i++) {
-		effet = ordreAlphabétique[i];
-		texte = effet;
+		texte = effet = ordreAlphabétique[i];
+		total = objEffetsTotaux[effet];
 		italic = false;
 		li = document.createElement("li");
 		if(objSeuils[effet]) {
 			seuil = objSeuils[effet].seuil;
-			q = Math.floor(objEffetsTotaux[effet]/seuil);
-			r = Math.floor(objEffetsTotaux[effet]%seuil);
+			q = Math.floor(total/seuil);
+			r = Math.floor(total%seuil);
+			if(total<seuil) {
+				italic = true;
+			}
 			if(objSeuils[effet].multiple) {
 				texte += " "+relatif(q);
 				if(r) {
-					texte += " [+"+r+"/"+seuil+"]";
+					texte += " (+"+r+"/"+seuil+")";
 				}
-			} else if(q==0) {
-				italic = true;
-				texte += " ["+r+"/"+seuil+"]";
+			} else if(total!=seuil) {
+				texte += " ("+total+"/"+seuil+")";
 			}
 		} else {
 			texte += " "+relatif(objEffetsTotaux[effet]);
@@ -403,4 +418,3 @@ ajouteTrTotal();
 initialiseHandlers();
 
 window.console.log("[Baroufleur] Script OFF sur : " + WHEREARTTHOU);
-
