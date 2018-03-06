@@ -57,7 +57,7 @@ var BDD_Sons = {
 			"Esq": -1,
 			"Concentr.": -1
 		},
-		description: "Esq -1 | Concentration -1 par seuil dépensé"
+		description: "Esquive -1 | Concentration -1 par seuil dépensé"
 	},
 	"Krouiiik"    : {
 		effet: {
@@ -130,9 +130,10 @@ var BDD_Sons = {
 
 //-------------------------- Utilitaires génériques --------------------------//
 
-function trim(str) {
-	return str.replace(/(^\s*)|(\s*$)/g,'');
-}
+// Est dans prototype depuis ES5.1
+//function trim(str) {
+//	return str.replace(/(^\s*)|(\s*$)/g,'');
+//}
 
 function epure(texte) {
 	return texte.
@@ -185,9 +186,9 @@ function getSonsDisponibles() {
 	for(i=0 ; i<selectPremierSon.options.length ; i++) {
 		option = selectPremierSon.options[i];
 		if(option.value) {
-			texte = trim(option.textContent);
+			texte = option.textContent.trim();
 			if(texte.indexOf("-")!=-1) {
-				texte = trim(texte.replace(/-/,""));
+				texte = texte.replace(/-/,"").trim();
 			}
 			objSonsDisponibles[texte] = option.value;
 		}
@@ -226,7 +227,7 @@ function enrichirListesSons() {
 			if(son.indexOf("-")!=-1) {
 				son = son.replace(/-/,"");
 			}
-			son = trim(son);
+			son = son.trim();
 			
 			if(!BDD_Sons[son]) {
 				window.console.warn(
