@@ -3,7 +3,7 @@
 // @namespace    Mountyhall
 // @description  Assistant Baroufle
 // @author       Dabihul
-// @version      0.2.1.0
+// @version      0.2.1.1
 // @updateURL    http://weblocal/scripts_externes/baroufleur/baroufleur.user.js
 // @include      */mountyhall/MH_Play/Actions/Competences/Play_a_Competence43b*
 // @grant        none
@@ -226,7 +226,7 @@ function getNombreDePAs() {
 
 function enrichirListesSons() {
 	var
-		i=1, j, option, son, texte, carac,
+		i=1, j, option, son, texte, effet,
 		selects = document.getElementsByName("ai_N1");
 	
 	while(selects[0]) {
@@ -310,6 +310,7 @@ function ajouteTrTotal() {
 	appendText(td, "Effet total:", true);
 	ul = document.createElement("ul");
 	ul.style.textAlign = "left";
+	ul.style.margin = "0px";
 	ul.id = "baroufleur_effettotal";
 	td.appendChild(ul);
 	return true;
