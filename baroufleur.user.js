@@ -195,7 +195,7 @@ function appendText(parent, text, bold, italic) {
 function getSonsDisponibles() {
 // Extrait la liste des sons disponibles pour Baroufler.
 // 
-// Nécessite: BDD_Sons
+// Nécessite: -
 // Effectue:
 // - initialise objCodeDuSon
 // - initialise objSonParCode
@@ -219,9 +219,7 @@ function getSonsDisponibles() {
 			}
 			objCodeDuSon[texte] = option.value;
 			objSonParCode[option.value] = texte;
-			if(texte in BDD_Sons) {
-				ordreAlphabétiqueSons.push(texte);
-			}
+			ordreAlphabétiqueSons.push(texte);
 		}
 	}
 	ordreAlphabétiqueSons.sort();
