@@ -3,7 +3,7 @@
 // @namespace    Mountyhall
 // @description  Assistant Baroufle
 // @author       Dabihul
-// @version      0.2.3.1
+// @version      0.2.3.2
 // @updateURL    http://weblocal/scripts_externes/baroufleur/baroufleur.user.js
 // @include      */mountyhall/MH_Play/Actions/Competences/Play_a_Competence43b*
 // @grant        none
@@ -395,7 +395,9 @@ function majEffetTotal() {
 	
 	// Création de l'ordre alphabétique des effets
 	for(effet in objEffetsTotaux) {
-		ordreAlphabétiqueEffets.push(effet);
+		if(objEffetsTotaux[effet]!=0) {
+			ordreAlphabétiqueEffets.push(effet);
+		}
 	}
 	ordreAlphabétiqueEffets.sort();
 	
