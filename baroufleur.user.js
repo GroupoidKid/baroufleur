@@ -3,7 +3,7 @@
 // @namespace    Mountyhall
 // @description  Assistant Baroufle
 // @author       Dabihul
-// @version      0.2.3.2
+// @version      0.2.3.7
 // @updateURL    http://weblocal/scripts_externes/baroufleur/baroufleur.user.js
 // @include      */mountyhall/MH_Play/Actions/Competences/Play_a_Competence43b*
 // @grant        none
@@ -26,9 +26,12 @@ var
 	// [son]
 	ordreAlphabétiqueSons = [],
 	
+	// Table principale de la comp'
+	tableComp,
+	
 	// Nombre de PA du Baroufle
 	nombreDePAs = 3;
-	
+
 const
 	BDD_Sons = {
 //	"Son": {
@@ -227,7 +230,50 @@ function getSonsDisponibles() {
 	return true;
 }
 
+function getTableComp() {
+// Recherche la table principale de la comp'
+// Nécessite: -
+// Effectue: définit tableComp
+	try {
+		tableComp = document.querySelector("#mhPlay form table");
+	} catch(e) {
+		window.console.error(
+			"[Baroufleur] Table principale non trouvée - Abandon", e
+		);
+		return false;
+	}
+	return true;
+}
+
 //------------------------ Enrichissement des listes -------------------------//
+
+function effetDuSon(son, rang) {
+// Retourne une chaîne de caractère correspondant à l'effet exact du son,
+// déterminé par le type du son et son rang dans la mélodie.
+	var
+		texte = " (",
+		effet;
+	
+	for(effet in BDD_Sons[son].effet) {
+		if(texte.length>2) {
+			texte += " | ";
+		}
+		if(BDD_Sons[son].seuil) {
+			if(BDD_Sons[son].multiple) {
+				texte += effet+" +"+rang+"/"+BDD_Sons[son].seuil;
+			} else {
+				texte += effet+": "+rang+"/"+BDD_Sons[son].seuil;
+			}
+		} else {
+			texte += effet+" "+relatif(BDD_Sons[son].effet[effet]*rang);
+		}
+	}
+	texte += ")";
+	
+	return 	texte.
+		replace(/Concentration/, "Conc.").
+		replace(/BM Magiques/, "BMM");
+}
 
 function initialiseListesSons() {
 // Initialisation générale du script.
@@ -266,27 +312,7 @@ function initialiseListesSons() {
 			option.title = BDD_Sons[son].description;
 			
 			// Ajouter l'effet
-			texte = " (";
-			for(effet in BDD_Sons[son].effet) {
-				if(BDD_Sons[son].seuil) {
-					if(BDD_Sons[son].multiple) {
-						texte += effet+" +"+i+"/"+BDD_Sons[son].seuil;
-					} else {
-						texte += effet;
-					}
-				} else {
-					if(texte.length>2) {
-						texte += " | ";
-					}
-					texte += effet+" "+relatif(BDD_Sons[son].effet[effet]*i);
-				}
-			}
-			texte += ")";
-			appendText(option,
-				texte
-					.replace(/Concentration/, "Conc.")
-					.replace(/BM Magiques/, "BMM")
-			);
+			appendText(option, effetDuSon(son, i));
 		}
 		
 		// Ajout du Handler
@@ -306,44 +332,34 @@ function initialiseListesSons() {
 function ajouteZoneTotal() {
 // Crée la zone ou le total des effets est affiché.
 // Nécessite: nombreDePAs
+// Effectue: ajout du td avec l'ul 'baroufleur_effettotal'
 	var
-		table, tr, td, ul;
+		tr = tableComp.rows[1],
+		td, ul;
 	
-	try {
-		table = document.querySelector("#mhPlay form table");
-		tr = table.rows[1];
-//		tr = document.evaluate(
-//			"//tr[./td[contains(.,'premier')]]",
-//			table, null, 9, null
-//		).singleNodeValue;
-	} catch(e) {
-		window.console.error(
-			"[Baroufleur] TR d'insertion non trouvé - Abandon", e
-		);
-		return false;
-	}
-	
-	table.rows[0].cells[0].colSpan = 3;
-	table.rows[table.rows.length-1].cells[0].colSpan = 3;
+	// Insère l'effet total comme 3e colonne dans la table
+	tableComp.rows[0].cells[0].colSpan = 3;
+	tableComp.rows[tableComp.rows.length-1].cells[0].colSpan = 3;
 	td = tr.insertCell(2);
 	td.className = "mh_tdtitre";
 	td.rowSpan = nombreDePAs;
 	td.style.width = "25%";
 	appendText(td, "Effet total:", true);
+	
+	// Ajoute la liste des effets totaux (vide)
 	ul = document.createElement("ul");
 	ul.id = "baroufleur_effettotal";
 	ul.style.textAlign = "left";
 	ul.style.margin = "0px";
 	td.appendChild(ul);
-	return true;
 }
 
 function majEffetTotal() {
-// Mise à jour de la liste des effets (baroufleur_effettotal)
+// Mise à jour de la liste des effets 'baroufleur_effettotal'
 // en fonction des sons sélectionnés.
 // 
 // Nécessite:
-// - la mise en place de la liste (ul) baroufleur_effettotal
+// - la mise en place de la liste (ul) 'baroufleur_effettotal'
 // - BDD_Sons
 // - objSonParCode
 // - nombreDePAs
@@ -436,9 +452,10 @@ function onSelectChange() {
 
 //-------------------------------- Code actif --------------------------------//
 
-getSonsDisponibles();
-initialiseListesSons();
-ajouteZoneTotal();
+if(getSonsDisponibles() && getTableComp()) {
+	initialiseListesSons();
+	ajouteZoneTotal();
+}
 
 window.console.debug(
 	objSonParCode,
