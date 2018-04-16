@@ -3,7 +3,7 @@
 // @namespace    Mountyhall
 // @description  Assistant Baroufle
 // @author       Dabihul
-// @version      0.3a.0.53
+// @version      0.3a.0.55
 // @updateURL    http://weblocal/scripts_externes/baroufleur/baroufleur.user.js
 // @include      */mountyhall/MH_Play/Actions/Competences/Play_a_Competence43b*
 // @grant        none
@@ -20,17 +20,24 @@ var
 	// {son: code}
 	objCodeDuSon = {},
 	// {code: son}
-	objSonParCode = {
-		"dummy": "not an array, sicko!"
-	},
+	objSonParCode = {},
 	// [son]
 	ordreAlphabétiqueSons = [],
+	// [son]
+	ordreAlphabétiqueEffets = [],
 	
 	// Table principale de la comp'
 	tableComp,
 	
 	// Nombre de PA du Baroufle
 	nombreDePAs,
+	
+	// Mode du clavier
+	// 0: selects
+	// 1: clavier avec son
+	// 2: clavier avec effets
+	// 3: clavier avec son+effets
+	modeActif = 0,
 	
 	// Nombre de sons par ligne en mode clavier
 	sonsParLigne = 3;
@@ -211,6 +218,7 @@ function getSonsDisponibles() {
 // - initialise objCodeDuSon
 // - initialise objSonParCode
 // - initialise ordreAlphabétiqueSons
+// - initialise ordreAlphabétiqueEffets
 	try {
 		var selectPremierSon = document.getElementsByName("ai_N1")[0];
 	} catch(e) {
@@ -219,21 +227,29 @@ function getSonsDisponibles() {
 		);
 		return false;
 	}
-	var i, option, texte;
+	var i, option, son, effet, listeEffets = {};
 	
 	for(i=0 ; i<selectPremierSon.options.length ; i++) {
 		option = selectPremierSon.options[i];
 		if(option.value) {
-			texte = option.textContent.trim();
-			if(texte.indexOf("-")!=-1) {
-				texte = texte.replace(/-/,"").trim();
+			son = option.textContent.trim();
+			if(son.indexOf("-")!=-1) {
+				son = son.replace(/-/,"").trim();
 			}
-			objCodeDuSon[texte] = option.value;
-			objSonParCode[option.value] = texte;
-			ordreAlphabétiqueSons.push(texte);
+			objCodeDuSon[son] = option.value;
+			objSonParCode[option.value] = son;
+			ordreAlphabétiqueSons.push(son);
+			ordreAlphabétiqueEffets.push(son);
+			listeEffets[son] = "";
+			for(effet in BDD_Sons[son].effet) {
+				listeEffets[son] += effet;
+			}
 		}
 	}
 	ordreAlphabétiqueSons.sort();
+	ordreAlphabétiqueEffets.sort(function(a, b) {
+		return listeEffets[a]>listeEffets[b];
+	});
 	
 	return true;
 }
@@ -259,7 +275,7 @@ function effetDuSon(son, rang) {
 // Retourne une chaîne de caractère correspondant à l'effet exact du son,
 // déterminé par le type du son et son rang dans la mélodie.
 	var
-		texte = " (",
+		texte = "",
 		effet;
 	
 	for(effet in BDD_Sons[son].effet) {
@@ -276,7 +292,6 @@ function effetDuSon(son, rang) {
 			texte += effet+" "+relatif(BDD_Sons[son].effet[effet]*rang);
 		}
 	}
-	texte += ")";
 	
 	return 	texte.
 		replace(/Concentration/, "Conc.").
@@ -320,7 +335,7 @@ function initialiseListesSons() {
 			option.title = BDD_Sons[son].description;
 			
 			// Ajouter l'effet
-			appendText(option, effetDuSon(son, i));
+			appendText(option, " ("+effetDuSon(son, i)+")");
 		}
 		
 		// Ajout du Handler
@@ -425,7 +440,7 @@ function majClavier(rangActif) {
 	var
 		rang = document.getElementById("baroufleur_rang"),
 		chercheActif = false,
-		i, span, select, input;
+		i, span, select, son, input;
 	if(!rangActif) {
 		chercheActif = true;
 		rangActif = 1;
@@ -440,10 +455,13 @@ function majClavier(rangActif) {
 			if(chercheActif) {
 				rangActif++;
 			}
-			span.innerHTML = objSonParCode[select.value];
+			son = objSonParCode[select.value];
+			span.innerHTML = son;
+			span.title = effetDuSon(son, i);
 		} else {
 			chercheActif = false;
 			span.innerHTML = "?";
+			delete span.title;
 		}
 	}
 	
@@ -452,9 +470,9 @@ function majClavier(rangActif) {
 		input = document.getElementById("baroufleur_"+son);
 		input.rang = rangActif;
 		if(rangActif<=nombreDePAs) {
-			input.value = son+effetDuSon(son, rangActif);
+			input.value = son+" ("+effetDuSon(son, rangActif)+")";
 		} else if(input.value=="") {
-			input.value = son+effetDuSon(son, 1);
+			input.value = son+" ("+effetDuSon(son, 1)+")";
 		}
 	}
 	
@@ -515,11 +533,11 @@ function majEffetTotal() {
 		// Scope = fonction
 		objEffetsTotaux = {}, objSeuils = {},
 		
-		// Scope = while inital
+		// Scope = for inital
 		i, code, son, effet,
 		
 		// Scope = affichage final
-		ordreAlphabétiqueEffets = [],
+		ordreAlphaEffetsActifs = [],
 		//son, effet,
 		li, texte, italic, total, seuil, q, r,
 		ulTotal = document.getElementById("baroufleur_effettotal");
@@ -551,17 +569,17 @@ function majEffetTotal() {
 		ulTotal.removeChild(ulTotal.firstChild);
 	}
 	
-	// Création de l'ordre alphabétique des effets
+	// Création de l'ordre alphabétique des effets actifs
 	for(effet in objEffetsTotaux) {
 		if(objEffetsTotaux[effet]!=0) {
-			ordreAlphabétiqueEffets.push(effet);
+			ordreAlphaEffetsActifs.push(effet);
 		}
 	}
-	ordreAlphabétiqueEffets.sort();
+	ordreAlphaEffetsActifs.sort();
 	
 	// Génération de la liste des effets
-	for(i=0 ; i<ordreAlphabétiqueEffets.length ; i++) {
-		texte = effet = ordreAlphabétiqueEffets[i];
+	for(i=0 ; i<ordreAlphaEffetsActifs.length ; i++) {
+		texte = effet = ordreAlphaEffetsActifs[i];
 		total = objEffetsTotaux[effet];
 		italic = false;
 		li = document.createElement("li");
@@ -622,7 +640,7 @@ function basculeInterface() {
 }
 
 function valideNote() {
-	var	
+	var
 		son = this.son,
 		rang = this.rang,
 		select = document.getElementsByName("ai_N"+rang)[0];
@@ -654,7 +672,8 @@ if(getSonsDisponibles() && getTableComp()) {
 window.console.debug(
 	objSonParCode,
 	objCodeDuSon,
-	ordreAlphabétiqueSons
+	ordreAlphabétiqueSons,
+	ordreAlphabétiqueEffets
 );
 
 window.console.log("[Baroufleur] Script OFF sur : " + WHEREARTTHOU);
