@@ -3,7 +3,7 @@
 // @namespace    Mountyhall
 // @description  Assistant Baroufle
 // @author       Dabihul
-// @version      0.3a.0.66
+// @version      0.3a.1.3
 // @updateURL    http://weblocal/scripts_externes/baroufleur/baroufleur.user.js
 // @include      */mountyhall/MH_Play/Actions/Competences/Play_a_Competence43b*
 // @grant        none
@@ -379,6 +379,7 @@ function initialiseClavier() {
 	// Crée le clavier
 	tr = tableComp.insertRow(tableComp.rows.length-1);
 	tr.id = "baroufleur_clavier";
+	tr.style.display = "none";
 	td = tr.insertCell(0);
 	td.className = "mh_tdpage";
 	td.style.textAlign = "center";
@@ -437,7 +438,7 @@ function initialiseClavier() {
 	input = ajouteBouton(td, "Désactiver le clavier");
 	input.onclick = basculeInterface;
 	
-	return ul;
+	return tr;
 }
 
 function majClavier(rangActif) {
@@ -482,15 +483,15 @@ function majClavier(rangActif) {
 		switch(typeClavier) {
 			case 1:
 				input.value = son;
-				input.title = effetDuSon(son, rangActif);
+				input.title = BDD_Sons[son].description;
 				break;
 			case 2:
 				input.value = effetDuSon(son, rangActif);
 				input.title = son;
 				break;
 			case 3:
-				input.removeAttribute("title");
 				input.value = son+" ("+effetDuSon(son, rangActif)+")";
+				input.title = BDD_Sons[son].description;
 				break;
 		}
 	}
@@ -625,16 +626,16 @@ function majEffetTotal() {
 
 function basculeInterface() {
 // Bascule entre les interfaces classique (selects) et clavier
+	var clavier = document.getElementById("baroufleur_clavier");
+	if(!clavier) {
+		clavier = initialiseClavier();
+	}
 	var
-		clavier = document.getElementById("baroufleur_clavier"),
 		ulActive = document.getElementById("baroufleur_effettotal"),
 		ulInactive = document.getElementById("baroufleur_inactif"),
 		i;
 	
-	if(!clavier) {
-		ulInactive = initialiseClavier();
-	}
-	/*if(clavier.style.display=="none") {
+	if(clavier.style.display=="none") {
 		clavier.style.display = "";
 		// Masque les lignes d'origine
 		for(i=1 ; i<=nombreDePAs ; i++) {
@@ -646,7 +647,7 @@ function basculeInterface() {
 		for(i=1 ; i<=nombreDePAs ; i++) {
 			tableComp.rows[i].style.display = "";
 		}
-	}*/
+	}
 	majClavier();
 	ulActive.id = "baroufleur_inactif";
 	ulInactive.id = "baroufleur_effettotal";
