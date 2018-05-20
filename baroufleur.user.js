@@ -155,15 +155,36 @@ const
 
 //-------------------------- Utilitaires génériques --------------------------//
 
-// Gestion des objets par Storage
-// https://stackoverflow.com/questions/2010892/storing-objects-in-html5-localstorage#answer-3146971
+// Gestion perso des objets pour Storage
 Storage.prototype.setObject = function(key, value) {
-    this.setItem(key, JSON.stringify(value));
+	if(typeof value!=="object") {
+		window.console.warn(
+			"[setObject] given value is not of object type: %o",
+			value
+		);
+	} else {
+		this.setItem(key, JSON.stringify(value));
+	}
 }
 
 Storage.prototype.getObject = function(key) {
-    var value = this.getItem(key);
-    return value && JSON.parse(value);
+	var	value = this.getItem(key), obj;
+	if(!value) {
+		window.console.warn(
+			"[getObject] nothing found at key: %s", key
+		);
+		return {};
+	}
+	try {
+		obj = JSON.parse(value);
+	} catch(e) {
+		window.console.error(
+			"[getObject] Parsing error. Non-JSON value at key: %s\n%o",
+			key, e
+		);
+		return {};
+	}
+	return obj;
 }
 
 function epure(texte) {
