@@ -9,11 +9,14 @@
 // @grant        none
 // ==/UserScript==
 
+//---------------------- À l'intention des programmeurs ----------------------//
+
+//...
 
 //---------------------------- Variables Globales ----------------------------//
 
-var WHEREARTTHOU = window.location.pathname;
-window.console.log("[Baroufleur] Script ON! sur : " + WHEREARTTHOU);
+var url = window.location.pathname;
+window.console.log("[Baroufleur] Script ON sur : %s", url);
 
 var
 	// Listes des Sons disponibles
@@ -40,6 +43,8 @@ var
 	
 	// Nombre de sons par ligne en mode clavier
 	sonsParLigne = 3;
+
+//----------------------- Base de données sur les sons -----------------------//
 
 const
 	BDD_Sons = {
@@ -228,14 +233,15 @@ function ajouteTexte(parent, text, bold, italic) {
 	parent.appendChild(document.createTextNode(text));
 }
 
-function ajouteBouton(node, value) {
+function ajouteBouton(parent, value) {
+// Ajoute un bouton de valeur 'value' de classe 'mh_form_submit' à 'parent'
 	var input = document.createElement("input");
 	input.type = "button";
 	input.className = "mh_form_submit";
 	if(value) {
 		input.value = value;
 	}
-	node.appendChild(input);
+	parent.appendChild(input);
 	return input;
 }
 
@@ -303,8 +309,9 @@ function getTableComp() {
 //------------------------ Enrichissement des listes -------------------------//
 
 function effetDuSon(son, rang) {
-// Retourne une chaîne de caractère correspondant à l'effet exact du son,
+// Retourne une chaîne de caractères correspondant à l'effet exact du son,
 // déterminé par le type du son et son rang dans la mélodie.
+// Nécessite: BDD_Sons
 	var
 		texte = "",
 		effet;
@@ -338,7 +345,7 @@ function initialiseListesSons() {
 // Nécessite: BDD_Sons
 // Effectue:
 // - ajoute les données de BM dans les selects
-// - ajoute les Handlers sur les selects
+// - ajoute les handlers sur les selects
 // - initialise nombreDePAs
 	var
 		i=1, j, option, son, texte, effet,
@@ -387,15 +394,17 @@ function initialiseListesSons() {
 //---------------------------- Interface clavier -----------------------------//
 
 function initialiseClavier() {
+// Crée un clavier, *vide* et *invisible*, en dessous des sélecteurs,
+// et lui adjoint une copie de la zone 'baroufleur_effettotal'.
+// 
+// Nécessite : 
+// - tableComp
+// - la mise en place préalable de la zone 'baroufleur_effettotal'
+// Effectue : la création d'un clavier prêt à remplir
 	var
 		ulRef = document.getElementById("baroufleur_effettotal"),
 		tr, td, span, ul,
 		table, str, std, input, i, j, son;
-	
-	// Masque les lignes d'origine
-	/*for(i=1 ; i<=nombreDePAs ; i++) {
-		tableComp.rows[i].style.display = "none";
-	}*/
 	
 	// Crée le clavier
 	tr = tableComp.insertRow(tableComp.rows.length-1);
@@ -463,6 +472,13 @@ function initialiseClavier() {
 }
 
 function majClavier(rangActif) {
+// Met à jour les boutons du clavier et la mélodie en fonction du modeClavier
+// et du rangActif si spécifié
+// 
+// Nécessite :
+// - la création préalable du clavier
+// - ordreAlphabétiqueSons || ordreAlphabétiqueEffets
+// - BDD_Sons
 	var
 		rang = document.getElementById("baroufleur_rang"),
 		chercheActif = false,
@@ -513,7 +529,6 @@ function majClavier(rangActif) {
 			case 3:
 				input.value = son+" ("+effetDuSon(son, rangActif)+")";
 				input.title = BDD_Sons[son].description;
-				break;
 		}
 	}
 	
@@ -528,7 +543,7 @@ function majClavier(rangActif) {
 //------------------------- Gestion de l'effet total -------------------------//
 
 function ajouteZoneTotal() {
-// Crée la zone ou le total des effets est affiché.
+// Crée la zone où le total des effets est affiché.
 // Nécessite: nombreDePAs
 // Effectue: ajout du td avec l'ul 'baroufleur_effettotal'
 	var
@@ -616,9 +631,10 @@ function majEffetTotal() {
 	
 	// Génération de la liste des effets
 	for(i=0 ; i<ordreAlphaEffetsActifs.length ; i++) {
-		texte = effet = ordreAlphaEffetsActifs[i];
+		effet = ordreAlphaEffetsActifs[i];
 		total = objEffetsTotaux[effet];
 		italic = false;
+		texte = effet;
 		li = document.createElement("li");
 		if(objSeuils[effet]) {
 			seuil = objSeuils[effet].seuil;
@@ -676,6 +692,7 @@ function basculeInterface() {
 }
 
 function valideNote() {
+// Gère les clics sur les touches du clavier
 	var
 		son = this.son,
 		rang = this.rang,
@@ -688,6 +705,7 @@ function valideNote() {
 }
 
 function reinitialiseSon() {
+// Gère les clics sur les notes de la mélodie
 	var rang = this.rang;
 	document.getElementsByName("ai_N"+rang)[0].value = "";
 	majEffetTotal();
@@ -695,6 +713,7 @@ function reinitialiseSon() {
 }
 
 function onSelectChange() {
+// Gère les changements sur les selects (interface classique)
 	majEffetTotal();
 }
 
@@ -712,5 +731,4 @@ window.console.debug(
 	ordreAlphabétiqueEffets
 );
 
-window.console.log("[Baroufleur] Script OFF sur : " + WHEREARTTHOU);
-
+window.console.log("[Baroufleur] Script OFF sur: %s", url);
