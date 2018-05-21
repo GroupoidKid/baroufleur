@@ -567,6 +567,37 @@ function majClavier(rangActif) {
 	}
 }
 
+function basculeInterface() {
+// Bascule entre les interfaces classique (selects) et clavier
+	var clavier = document.getElementById("baroufleur_clavier");
+	if(!clavier && modeClavier>0) {
+		clavier = initialiseClavier();
+	}
+	var
+		ulActive = document.getElementById("baroufleur_effettotal"),
+		ulInactive = document.getElementById("baroufleur_inactif"),
+		i;
+	
+	if(clavier.style.display=="none") {
+		clavier.style.display = "";
+		// Masque les lignes d'origine
+		for(i=1 ; i<=nombreDePAs ; i++) {
+			tableComp.rows[i].style.display = "none";
+		}
+		majClavier();
+	} else {
+		clavier.style.display = "none";
+		// Affiche les lignes d'origine
+		for(i=1 ; i<=nombreDePAs ; i++) {
+			tableComp.rows[i].style.display = "";
+		}
+	}
+	
+	ulActive.id = "baroufleur_inactif";
+	ulInactive.id = "baroufleur_effettotal";
+	majEffetTotal();
+}
+
 //--------------------------- Gestion des Mélodies ---------------------------//
 
 function ajouteLigneMelodies() {
@@ -727,37 +758,6 @@ function changeModeClavier() {
 
 	// Sauvegarde du nouveau mode
 	window.localStorage.setItem("baroufleur.mode", modeClavier);
-}
-
-function basculeInterface() {
-// Bascule entre les interfaces classique (selects) et clavier
-	var clavier = document.getElementById("baroufleur_clavier");
-	if(!clavier && modeClavier>0) {
-		clavier = initialiseClavier();
-	}
-	var
-		ulActive = document.getElementById("baroufleur_effettotal"),
-		ulInactive = document.getElementById("baroufleur_inactif"),
-		i;
-	
-	if(clavier.style.display=="none") {
-		clavier.style.display = "";
-		// Masque les lignes d'origine
-		for(i=1 ; i<=nombreDePAs ; i++) {
-			tableComp.rows[i].style.display = "none";
-		}
-		majClavier();
-	} else {
-		clavier.style.display = "none";
-		// Affiche les lignes d'origine
-		for(i=1 ; i<=nombreDePAs ; i++) {
-			tableComp.rows[i].style.display = "";
-		}
-	}
-	
-	ulActive.id = "baroufleur_inactif";
-	ulInactive.id = "baroufleur_effettotal";
-	majEffetTotal();
 }
 
 function valideNote() {
