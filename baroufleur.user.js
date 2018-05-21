@@ -3,7 +3,7 @@
 // @namespace    Mountyhall
 // @description  Assistant Baroufle
 // @author       Dabihul
-// @version      0.3a.1.3
+// @version      0.3a.2.14
 // @updateURL    http://weblocal/scripts_externes/baroufleur/baroufleur.user.js
 // @include      */mountyhall/MH_Play/Actions/Competences/Play_a_Competence43b*
 // @grant        none
@@ -36,10 +36,13 @@ var
 	nombreDePAs,
 	
 	// Mode du clavier
-	// 1: clavier avec son
-	// 2: clavier avec effets
-	// 3: clavier avec son+effets
-	typeClavier = 1,
+	typesClavier = {
+		0: "Désactivé",
+		1: "Sons",
+		2: "Effets",
+		3: "Sons & effets"
+	},
+	modeClavier = 0,
 	
 	// Nombre de sons par ligne en mode clavier
 	sonsParLigne = 3;
@@ -245,6 +248,21 @@ function ajouteBouton(parent, value) {
 	return input;
 }
 
+function ajouteSelecteur(parent) {
+	var select = document.createElement("select");
+	select.className = "SelectboxV2";
+	parent.appendChild(select);
+	return select;
+}
+
+function ajouteOption(parent, text, value) {
+	var option = document.createElement("option");
+	option.appendChild(document.createTextNode(text));
+	option.value = value;
+	parent.appendChild(option);
+	return option;
+}
+
 //-------------------------- Extraction de données ---------------------------//
 
 function getSonsDisponibles() {
@@ -400,6 +418,7 @@ function initialiseClavier() {
 // Nécessite : 
 // - tableComp
 // - la mise en place préalable de la zone 'baroufleur_effettotal'
+// - la mise en place préalable du sélecteur de mélodies
 // Effectue : la création d'un clavier prêt à remplir
 	var
 		ulRef = document.getElementById("baroufleur_effettotal"),
@@ -407,13 +426,13 @@ function initialiseClavier() {
 		table, str, std, input, i, j, son;
 	
 	// Crée le clavier
-	tr = tableComp.insertRow(tableComp.rows.length-1);
+	tr = tableComp.insertRow(tableComp.rows.length-2);
 	tr.id = "baroufleur_clavier";
 	tr.style.display = "none";
 	td = tr.insertCell(0);
 	td.className = "mh_tdpage";
 	td.style.textAlign = "center";
-	td.style.fintWeight = "bold";
+	td.style.fontWeight = "bold";
 	td.colSpan = 2;
 	ajouteTexte(td, "Mélodie: ", true);
 	span = document.createElement("span");
@@ -464,10 +483,6 @@ function initialiseClavier() {
 	ul.id = "baroufleur_inactif";
 	td.appendChild(ul);
 	
-	// Ajoute le bouton de désactivation du clavier
-	input = ajouteBouton(td, "Désactiver le clavier");
-	input.onclick = basculeInterface;
-	
 	return tr;
 }
 
@@ -488,7 +503,7 @@ function majClavier(rangActif) {
 		chercheActif = true;
 		rangActif = 1;
 	}
-	if(typeClavier==2) {
+	if(modeClavier==2) {
 		ordreDesBoutons = ordreAlphabétiqueEffets;
 	}
 	
@@ -517,7 +532,7 @@ function majClavier(rangActif) {
 		input.rang = rangActif;
 		son = ordreDesBoutons[i];
 		input.son = son;
-		switch(typeClavier) {
+		switch(modeClavier) {
 			case 1:
 				input.value = son;
 				input.title = BDD_Sons[son].description;
@@ -538,6 +553,35 @@ function majClavier(rangActif) {
 	} else {
 		rang.innerHTML = "";
 	}
+}
+
+//--------------------------- Gestion des Mélodies ---------------------------//
+
+function ajouteLigneMelodies() {
+// Crée la ligne avec le sélecteur / enregistreur de mélodies
+// et le sélecteur de clavier
+// Nécessite : tableComp
+	var tr, td, i, select;
+	
+	// Crée la ligne des sélecteurs
+	tr = tableComp.insertRow(tableComp.rows.length-1);
+	tr.id = "baroufleur_ligne_selecteurs";
+	td = tr.insertCell(0);
+	td.className = "mh_tdpage";
+	td.colSpan = 2;
+	
+	// TODO Ajout du système de mélodies
+	ajouteTexte(td, "Mélodies : ", true);
+	
+	// Ajout du sélecteur de clavier
+	td = tr.insertCell(1);
+	td.className = "mh_tdtitre";
+	ajouteTexte(td, "Clavier: ", true);
+	select = ajouteSelecteur(td);
+	for(i in typesClavier)  {
+		ajouteOption(select, typesClavier[i], i);
+	}
+	select.onchange = changeModeClavier;
 }
 
 //------------------------- Gestion de l'effet total -------------------------//
@@ -565,10 +609,6 @@ function ajouteZoneTotal() {
 	ul.style.textAlign = "left";
 	ul.style.margin = "0px";
 	td.appendChild(ul);
-	
-	// Ajoute le bouton d'actvation du clavier
-	input = ajouteBouton(td, "Activer le clavier");
-	input.onclick = basculeInterface;
 }
 
 function majEffetTotal() {
@@ -661,10 +701,25 @@ function majEffetTotal() {
 
 //--------------------------------- Handlers ---------------------------------//
 
+function changeModeClavier() {
+// Gère les changements du sélecteur de mode
+	var mode = Number(this.value);
+	if((mode?1:0)^(modeClavier?1:0)) {
+		modeClavier = mode;
+		basculeInterface();
+	} else {
+		modeClavier = mode;
+		majClavier();
+	}
+
+	// Sauvegarde du nouveau mode
+	window.localStorage.setItem("baroufleur.mode", modeClavier);
+}
+
 function basculeInterface() {
 // Bascule entre les interfaces classique (selects) et clavier
 	var clavier = document.getElementById("baroufleur_clavier");
-	if(!clavier) {
+	if(!clavier && modeClavier>0) {
 		clavier = initialiseClavier();
 	}
 	var
@@ -678,6 +733,7 @@ function basculeInterface() {
 		for(i=1 ; i<=nombreDePAs ; i++) {
 			tableComp.rows[i].style.display = "none";
 		}
+		majClavier();
 	} else {
 		clavier.style.display = "none";
 		// Affiche les lignes d'origine
@@ -685,7 +741,7 @@ function basculeInterface() {
 			tableComp.rows[i].style.display = "";
 		}
 	}
-	majClavier();
+	
 	ulActive.id = "baroufleur_inactif";
 	ulInactive.id = "baroufleur_effettotal";
 	majEffetTotal();
@@ -722,6 +778,20 @@ function onSelectChange() {
 if(getSonsDisponibles() && getTableComp()) {
 	initialiseListesSons();
 	ajouteZoneTotal();
+	ajouteLigneMelodies();
+	
+	// Extraction et retypage de baroufleur.mode
+	if(window.localStorage.getItem("baroufleur.mode")) {
+		modeClavier = Number(window.localStorage.getItem("baroufleur.mode"));
+		if(isNaN(modeClavier) || modeClavier<0 || modeClavier>3) {
+			modeClavier = 0;
+		}
+	}
+	
+	if(modeClavier>0) {
+		initialiseClavier();
+		basculeInterface();
+	}
 }
 
 window.console.debug(
