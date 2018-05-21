@@ -3,7 +3,7 @@
 // @namespace    Mountyhall
 // @description  Assistant Baroufle
 // @author       Dabihul
-// @version      0.3a.2.14
+// @version      0.3a.3.12
 // @updateURL    http://weblocal/scripts_externes/baroufleur/baroufleur.user.js
 // @include      */mountyhall/MH_Play/Actions/Competences/Play_a_Competence43b*
 // @grant        none
@@ -417,15 +417,16 @@ function initialiseClavier() {
 // 
 // Nécessite : 
 // - tableComp
+// - nombreDePAs
 // - la mise en place préalable de la zone 'baroufleur_effettotal'
-// - la mise en place préalable du sélecteur de mélodies
+// - la mise en place préalable du sélecteur de mélodies (insertRow)
 // Effectue : la création d'un clavier prêt à remplir
 	var
 		ulRef = document.getElementById("baroufleur_effettotal"),
 		tr, td, span, ul,
 		table, str, std, input, i, j, son;
 	
-	// Crée le clavier
+	// Création de la ligne contenant le clavier
 	tr = tableComp.insertRow(tableComp.rows.length-2);
 	tr.id = "baroufleur_clavier";
 	tr.style.display = "none";
@@ -434,12 +435,14 @@ function initialiseClavier() {
 	td.style.textAlign = "center";
 	td.style.fontWeight = "bold";
 	td.colSpan = 2;
+	
+	// Affichage mélodie en cours
 	ajouteTexte(td, "Mélodie: ", true);
 	span = document.createElement("span");
 	span.id = "baroufleur_rang";
 	td.appendChild(span);
 	div = document.createElement("div");
-	div.style.fontWeight = "bold";
+	div.style.fontWeight = "normal";
 	div.style.fontStyle = "italic";
 	for(i=1 ; i<=nombreDePAs ; i++) {
 		if(i>1) {
@@ -453,13 +456,14 @@ function initialiseClavier() {
 		div.appendChild(span);
 	}
 	td.appendChild(div);
+	
+	// Clavier proprement dit
 	table = document.createElement("table");
 	table.style.margin = "auto";
 	table.style.textAlign = "center";
 	table.style.border = "1px solid black;"
 	td.appendChild(table);
 	str = table.insertRow(0);
-	
 	j=0;
 	for(i=0 ; i<ordreAlphabétiqueSons.length ; i++) {
 		std = str.insertCell(j);
@@ -473,6 +477,14 @@ function initialiseClavier() {
 			str = table.insertRow(-1);
 		}
 	}
+	
+	// Ajout du bouton de Remise à Zéro
+	str = table.insertRow(-1);
+	std = str.insertCell(0);
+	std.colSpan = sonsParLigne;
+	btn = ajouteBouton(std, "RÉINITIALISER!");
+	btn.onclick = razMelodie;
+	str = table.insertRow(1);
 	
 	// Clone la liste des effets
 	td = tr.insertCell(1);
@@ -581,6 +593,7 @@ function ajouteLigneMelodies() {
 	for(i in typesClavier)  {
 		ajouteOption(select, typesClavier[i], i);
 	}
+	select.value = modeClavier;
 	select.onchange = changeModeClavier;
 }
 
@@ -768,6 +781,20 @@ function reinitialiseSon() {
 	majClavier(rang);
 }
 
+function razMelodie() {
+// Remet à zéro toute la mélodie
+	var
+		i=0,
+		selects = document.getElementsByName("ai_N1");
+	while(selects[0]) {
+		selects[0].value = "";
+		i++;
+		selects = document.getElementsByName("ai_N"+i);
+	}
+	majEffetTotal();
+	majClavier();
+}
+
 function onSelectChange() {
 // Gère les changements sur les selects (interface classique)
 	majEffetTotal();
@@ -778,7 +805,6 @@ function onSelectChange() {
 if(getSonsDisponibles() && getTableComp()) {
 	initialiseListesSons();
 	ajouteZoneTotal();
-	ajouteLigneMelodies();
 	
 	// Extraction et retypage de baroufleur.mode
 	if(window.localStorage.getItem("baroufleur.mode")) {
@@ -787,6 +813,8 @@ if(getSonsDisponibles() && getTableComp()) {
 			modeClavier = 0;
 		}
 	}
+	
+	ajouteLigneMelodies();
 	
 	if(modeClavier>0) {
 		initialiseClavier();
