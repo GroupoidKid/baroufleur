@@ -409,6 +409,121 @@ function initialiseListesSons() {
 	nombreDePAs = i-1;
 }
 
+//------------------------- Gestion de l'effet total -------------------------//
+
+function ajouteZoneTotal() {
+// Crée la zone où le total des effets est affiché.
+// Nécessite: nombreDePAs
+// Effectue: ajout du td avec l'ul 'baroufleur_effettotal'
+	var
+		tr = tableComp.rows[1],
+		td, ul, input;
+	
+	// Insère l'effet total comme 3e colonne dans la table
+	tableComp.rows[0].cells[0].colSpan = 3;
+	tableComp.rows[tableComp.rows.length-1].cells[0].colSpan = 3;
+	td = tr.insertCell(2);
+	td.className = "mh_tdtitre";
+	td.rowSpan = nombreDePAs;
+	td.style.width = "25%";
+	ajouteTexte(td, "Effet total:", true);
+	
+	// Ajoute la liste des effets totaux (vide)
+	ul = document.createElement("ul");
+	ul.id = "baroufleur_effettotal";
+	ul.style.textAlign = "left";
+	ul.style.margin = "0px";
+	td.appendChild(ul);
+}
+
+function majEffetTotal() {
+// Mise à jour de la liste des effets 'baroufleur_effettotal'
+// en fonction des sons sélectionnés.
+// 
+// Nécessite:
+// - la mise en place de la liste (ul) 'baroufleur_effettotal'
+// - BDD_Sons
+// - objSonParCode
+// - nombreDePAs
+// Effectue: mise à jour de l'ul
+	var
+		// Scope = fonction
+		objEffetsTotaux = {}, objSeuils = {},
+		
+		// Scope = for inital
+		i, code, son, effet,
+		
+		// Scope = affichage final
+		ordreAlphaEffetsActifs = [],
+		//son, effet,
+		li, texte, italic, total, seuil, q, r,
+		ulTotal = document.getElementById("baroufleur_effettotal");
+	
+	// Récupération des effets des sons sélectionnés
+	for(i=1 ; i<=nombreDePAs ; i++) {
+		code = document.getElementsByName("ai_N"+i)[0].value;
+		if(code) {
+			son = objSonParCode[code];
+			for(effet in BDD_Sons[son].effet) {
+				if(objEffetsTotaux[effet]) {
+					objEffetsTotaux[effet] += BDD_Sons[son].effet[effet]*i;
+				} else {
+					objEffetsTotaux[effet] = BDD_Sons[son].effet[effet]*i;
+				}
+				if(BDD_Sons[son].seuil && !objSeuils[effet]) {
+					objSeuils[effet] = {
+						seuil: BDD_Sons[son].seuil,
+						multiple: BDD_Sons[son].multiple
+					};
+				}
+			}
+		}
+	}
+	
+	// Màj de la liste baroufleur_effettotal:
+	// Effacement ancienne liste
+	while(ulTotal.firstChild) {
+		ulTotal.removeChild(ulTotal.firstChild);
+	}
+	
+	// Création de l'ordre alphabétique des effets actifs
+	for(effet in objEffetsTotaux) {
+		if(objEffetsTotaux[effet]!=0) {
+			ordreAlphaEffetsActifs.push(effet);
+		}
+	}
+	ordreAlphaEffetsActifs.sort();
+	
+	// Génération de la liste des effets
+	for(i=0 ; i<ordreAlphaEffetsActifs.length ; i++) {
+		effet = ordreAlphaEffetsActifs[i];
+		total = objEffetsTotaux[effet];
+		italic = false;
+		texte = effet;
+		li = document.createElement("li");
+		if(objSeuils[effet]) {
+			seuil = objSeuils[effet].seuil;
+			q = Math.floor(total/seuil);
+			r = Math.floor(total%seuil);
+			if(total<seuil) {
+				italic = true;
+			}
+			if(objSeuils[effet].multiple) {
+				texte += " "+relatif(q);
+				if(r) {
+					texte += " (+"+r+"/"+seuil+")";
+				}
+			} else if(total!=seuil) {
+				texte += " ("+total+"/"+seuil+")";
+			}
+		} else {
+			texte += " "+relatif(objEffetsTotaux[effet]);
+		}
+		ajouteTexte(li, texte, false, italic);
+		ulTotal.appendChild(li);
+	}
+}
+
 //---------------------------- Interface clavier -----------------------------//
 
 function initialiseClavier() {
@@ -626,121 +741,6 @@ function ajouteLigneMelodies() {
 	}
 	select.value = modeClavier;
 	select.onchange = changeModeClavier;
-}
-
-//------------------------- Gestion de l'effet total -------------------------//
-
-function ajouteZoneTotal() {
-// Crée la zone où le total des effets est affiché.
-// Nécessite: nombreDePAs
-// Effectue: ajout du td avec l'ul 'baroufleur_effettotal'
-	var
-		tr = tableComp.rows[1],
-		td, ul, input;
-	
-	// Insère l'effet total comme 3e colonne dans la table
-	tableComp.rows[0].cells[0].colSpan = 3;
-	tableComp.rows[tableComp.rows.length-1].cells[0].colSpan = 3;
-	td = tr.insertCell(2);
-	td.className = "mh_tdtitre";
-	td.rowSpan = nombreDePAs;
-	td.style.width = "25%";
-	ajouteTexte(td, "Effet total:", true);
-	
-	// Ajoute la liste des effets totaux (vide)
-	ul = document.createElement("ul");
-	ul.id = "baroufleur_effettotal";
-	ul.style.textAlign = "left";
-	ul.style.margin = "0px";
-	td.appendChild(ul);
-}
-
-function majEffetTotal() {
-// Mise à jour de la liste des effets 'baroufleur_effettotal'
-// en fonction des sons sélectionnés.
-// 
-// Nécessite:
-// - la mise en place de la liste (ul) 'baroufleur_effettotal'
-// - BDD_Sons
-// - objSonParCode
-// - nombreDePAs
-// Effectue: mise à jour de l'ul
-	var
-		// Scope = fonction
-		objEffetsTotaux = {}, objSeuils = {},
-		
-		// Scope = for inital
-		i, code, son, effet,
-		
-		// Scope = affichage final
-		ordreAlphaEffetsActifs = [],
-		//son, effet,
-		li, texte, italic, total, seuil, q, r,
-		ulTotal = document.getElementById("baroufleur_effettotal");
-	
-	// Récupération des effets des sons sélectionnés
-	for(i=1 ; i<=nombreDePAs ; i++) {
-		code = document.getElementsByName("ai_N"+i)[0].value;
-		if(code) {
-			son = objSonParCode[code];
-			for(effet in BDD_Sons[son].effet) {
-				if(objEffetsTotaux[effet]) {
-					objEffetsTotaux[effet] += BDD_Sons[son].effet[effet]*i;
-				} else {
-					objEffetsTotaux[effet] = BDD_Sons[son].effet[effet]*i;
-				}
-				if(BDD_Sons[son].seuil && !objSeuils[effet]) {
-					objSeuils[effet] = {
-						seuil: BDD_Sons[son].seuil,
-						multiple: BDD_Sons[son].multiple
-					};
-				}
-			}
-		}
-	}
-	
-	// Màj de la liste baroufleur_effettotal:
-	// Effacement ancienne liste
-	while(ulTotal.firstChild) {
-		ulTotal.removeChild(ulTotal.firstChild);
-	}
-	
-	// Création de l'ordre alphabétique des effets actifs
-	for(effet in objEffetsTotaux) {
-		if(objEffetsTotaux[effet]!=0) {
-			ordreAlphaEffetsActifs.push(effet);
-		}
-	}
-	ordreAlphaEffetsActifs.sort();
-	
-	// Génération de la liste des effets
-	for(i=0 ; i<ordreAlphaEffetsActifs.length ; i++) {
-		effet = ordreAlphaEffetsActifs[i];
-		total = objEffetsTotaux[effet];
-		italic = false;
-		texte = effet;
-		li = document.createElement("li");
-		if(objSeuils[effet]) {
-			seuil = objSeuils[effet].seuil;
-			q = Math.floor(total/seuil);
-			r = Math.floor(total%seuil);
-			if(total<seuil) {
-				italic = true;
-			}
-			if(objSeuils[effet].multiple) {
-				texte += " "+relatif(q);
-				if(r) {
-					texte += " (+"+r+"/"+seuil+")";
-				}
-			} else if(total!=seuil) {
-				texte += " ("+total+"/"+seuil+")";
-			}
-		} else {
-			texte += " "+relatif(objEffetsTotaux[effet]);
-		}
-		ajouteTexte(li, texte, false, italic);
-		ulTotal.appendChild(li);
-	}
 }
 
 //--------------------------------- Handlers ---------------------------------//
