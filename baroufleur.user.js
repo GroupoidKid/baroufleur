@@ -3,7 +3,7 @@
 // @namespace    Mountyhall
 // @description  Assistant Baroufle
 // @author       Dabihul
-// @version      0.3a.3.12
+// @version      0.3a.4.17
 // @updateURL    http://weblocal/scripts_externes/baroufleur/baroufleur.user.js
 // @include      */mountyhall/MH_Play/Actions/Competences/Play_a_Competence43b*
 // @grant        none
@@ -45,7 +45,10 @@ var
 	modeClavier = 0,
 	
 	// Nombre de sons par ligne en mode clavier
-	sonsParLigne = 3;
+	sonsParLigne = 3,
+	
+	// Liste des mélodies enregistrées
+	objMelodies = {};
 
 //----------------------- Base de données sur les sons -----------------------//
 
@@ -237,7 +240,7 @@ function ajouteTexte(parent, text, bold, italic) {
 }
 
 function ajouteBouton(parent, value) {
-// Ajoute un bouton de valeur 'value' de classe 'mh_form_submit' à 'parent'
+// Ajoute un bouton de libellé 'value' et de classe 'mh_form_submit' à 'parent'
 	var btn = document.createElement("input");
 	btn.type = "button";
 	btn.className = "mh_form_submit";
@@ -248,7 +251,17 @@ function ajouteBouton(parent, value) {
 	return btn;
 }
 
+function ajouteInput(parent) {
+// Ajoute un input[text] de classe 'TextboxV2' à 'parent'
+	var input = document.createElement("input");
+	input.type = "text";
+	input.className = "TextboxV2";
+	parent.appendChild(input);
+	return input;
+}
+
 function ajouteSelect(parent) {
+// Ajoute un select de classe 'SelectboxV2' à 'parent'
 	var select = document.createElement("select");
 	select.className = "SelectboxV2";
 	parent.appendChild(select);
@@ -256,6 +269,7 @@ function ajouteSelect(parent) {
 }
 
 function ajouteOption(parent, text, value) {
+// Ajoute une option de libellé 'text' et de valeur 'value' à 'parent'
 	var option = document.createElement("option");
 	option.appendChild(document.createTextNode(text));
 	option.value = value;
@@ -385,7 +399,7 @@ function initialiseListesSons() {
 			son = son.trim();
 			if(!BDD_Sons[son]) {
 				window.console.warn(
-					"[mmassistant] Le son "+son+" est inconnu"
+					"[mmassistant] Le son \'%s\' est inconnu", son
 				);
 				continue;
 			}
@@ -719,20 +733,44 @@ function ajouteLigneMelodies() {
 // Crée la ligne avec le sélecteur / enregistreur de mélodies
 // et le sélecteur de clavier
 // Nécessite : tableComp
-	var tr, td, i, select;
+	var tr, td, i, select, option, btn, input;
 	
 	// Crée la ligne des sélecteurs
 	tr = tableComp.insertRow(tableComp.rows.length-1);
 	tr.id = "baroufleur_ligne_selecteurs";
 	td = tr.insertCell(0);
 	td.className = "mh_tdpage";
-	td.colSpan = 2;
 	
-	// TODO Ajout du système de mélodies
+	// Ajout du sélecteur de mélodies
 	ajouteTexte(td, "Mélodies : ", true);
+	select = ajouteSelect(td);
+	select.id = "baroufleur_select_melodie";
+	select.onchange = chargeMelodie;
+	majMelodies();
+	
+	// Ajout du bouton de suppression
+	btn = ajouteBouton(td, "Suppr.");
+	btn.onclick = supprimeMelodie;
+	
+	// Ajout de l'enregistreur de Mélodies
+	td = tr.insertCell(1);
+	td.className = "mh_tdpage";
+	btn = ajouteBouton(td, "Sauvegarder:");
+	btn.onclick = ajouteMelodie;
+	ajouteTexte(td, " ");
+	input = ajouteInput(td);
+	input.id = "baroufleur_nouveau_nom";
+	// Le seul moyen de prevent le submit sur entrée est de hacker
+	// le onsubmit de MH...
+	// input.onkeyup = function(event) {
+	// 	if(event.keyCode==13) {
+	// 		event.preventDefault;
+	// 		ajouteMelodie();
+	// 	}
+	// }
 	
 	// Ajout du sélecteur de clavier
-	td = tr.insertCell(1);
+	td = tr.insertCell(2);
 	td.className = "mh_tdtitre";
 	ajouteTexte(td, "Clavier: ", true);
 	select = ajouteSelect(td);
@@ -741,6 +779,32 @@ function ajouteLigneMelodies() {
 	}
 	select.value = modeClavier;
 	select.onchange = changeModeClavier;
+}
+
+function majMelodies() {
+	var
+		select = document.getElementById("baroufleur_select_melodie"),
+		ordreAlpha = [],
+		nom, i;
+	
+	// Vidange du select
+	while(select.firstChild) {
+		select.removeChild(select.firstChild);
+	}
+	
+	// Création de l'ordre alphabétique
+	for(nom in objMelodies)  {
+		ordreAlpha.push(nom);
+	}
+	ordreAlpha.sort();
+	
+	// Ajout des mélodies dans l'ordre alphabétique
+	ajouteOption(select, "---", "");
+	for(i=0 ; i<ordreAlpha.length ; i++)  {
+		nom = ordreAlpha[i];
+		option = ajouteOption(select, nom, nom);
+		option.melodie = objMelodies[nom];
+	}
 }
 
 //--------------------------------- Handlers ---------------------------------//
@@ -800,6 +864,64 @@ function razMelodie() {
 	majClavier();
 }
 
+function chargeMelodie() {
+// Gère les changements du sélecteur de mélodies
+	if(!this.value) { return; }
+	var
+		melodie = this.options[this.selectedIndex].melodie,
+		selects = document.getElementsByName("ai_N1"),
+		i=1;
+	while(selects[0] && i<=melodie.length) {
+		selects[0].value = melodie[i-1];
+		i++;
+		selects = document.getElementsByName("ai_N"+i);
+	}
+	majEffetTotal();
+	majClavier();
+}
+
+function supprimeMelodie() {
+// Gère les clics sur le bouton de suppression de mélodie
+	var nom = document.getElementById('baroufleur_select_melodie').value;
+	if(!nom) { return; }
+	if(window.confirm("Supprimer définitivement \""+nom+"\" ?")) {
+		delete objMelodies[nom];
+		window.localStorage.setObject("baroufleur.melodies", objMelodies);
+		majMelodies();
+	}
+}
+
+function ajouteMelodie() {
+// Gère les clics sur le bouton d'ajout de mélodie
+	var
+		nom = document.getElementById("baroufleur_nouveau_nom").value,
+		selects = document.getElementsByName("ai_N1"),
+		melodie = [],
+		i=1;
+	
+	// On vérifie si le nom est fourni / existe déjà
+	if(!nom) {
+		window.alert("Le nom est obligatoire!");
+		return;
+	}
+	if(
+		nom in objMelodies &&
+		!window.confirm("Ce nom existe déjà. Écraser?")
+	) { return; }
+	
+	// On récupère les données
+	while(selects[0]) {
+		melodie.push(selects[0].value);
+		i++;
+		selects = document.getElementsByName("ai_N"+i);
+	}
+	objMelodies[nom] = melodie;
+	
+	// Stockage & maj
+	window.localStorage.setObject("baroufleur.melodies", objMelodies);
+	majMelodies();
+}
+
 //-------------------------------- Code actif --------------------------------//
 
 if(getSonsDisponibles() && getTableComp()) {
@@ -814,8 +936,34 @@ if(getSonsDisponibles() && getTableComp()) {
 		}
 	}
 	
-	ajouteLigneMelodies();
+	// Extraction et vérification de baroufleur.melodies
+	objMelodies = window.localStorage.getObject("baroufleur.melodies");
+	for(var nom in objMelodies) {
+		melodie = objMelodies[nom];
+		if(!melodie.constructor==="Array") {
+			window.console.error(
+				"[baroufleur] Mélodie \'%s\' de type invalide: %o",
+				nom, melodie
+			);
+			delete objMelodies[nom];
+			continue;
+		}
+		for(var i=0 ; i<Math.min(melodie.length, 6) ; i++) {
+			if(
+				isNaN(melodie[i]) && melodie[i]!=="" ||
+				!melodie[i] in objSonParCode
+			) {
+				window.console.error(
+					"[baroufleur] Sonorité invalide pour \'%s\': %o",
+					nom, melodie[i]
+				);
+				delete objMelodies[nom];
+				break;
+			}
+		}
+	}
 	
+	ajouteLigneMelodies();
 	if(modeClavier>0) {
 		initialiseClavier();
 		basculeInterface();
