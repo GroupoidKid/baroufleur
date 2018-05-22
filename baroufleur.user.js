@@ -3,11 +3,13 @@
 // @namespace    Mountyhall
 // @description  Assistant Baroufle
 // @author       Dabihul
-// @version      0.4a.0.0
+// @version      0.4.0.1
 // @updateURL    http://weblocal/scripts_externes/baroufleur/baroufleur.user.js
 // @include      */mountyhall/MH_Play/Actions/Competences/Play_a_Competence43b*
 // @grant        none
 // ==/UserScript==
+
+// Test du webhook, qui a l'air planté...
 
 //---------------------- À l'intention des programmeurs ----------------------//
 
