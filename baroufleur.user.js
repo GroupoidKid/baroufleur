@@ -3,7 +3,7 @@
 // @namespace    Mountyhall
 // @description  Assistant Baroufle
 // @author       Dabihul
-// @version      0.3a.4.17
+// @version      0.4a.0.0
 // @updateURL    http://weblocal/scripts_externes/baroufleur/baroufleur.user.js
 // @include      */mountyhall/MH_Play/Actions/Competences/Play_a_Competence43b*
 // @grant        none
@@ -52,7 +52,7 @@ var
 
 //----------------------- Base de données sur les sons -----------------------//
 
-const
+var
 	BDD_Sons = {
 //	"Son": {
 //		seuil: s'il y a un seuil (number),
@@ -169,7 +169,7 @@ const
 // Gestion perso des objets pour Storage
 Storage.prototype.setObject = function(key, value) {
 	if(typeof value!=="object") {
-		window.console.warn(
+		window.console.error(
 			"[setObject] given value is not of object type: %o",
 			value
 		);
@@ -290,9 +290,10 @@ function getSonsDisponibles() {
 // - initialise ordreAlphabétiqueEffets
 	try {
 		var selectPremierSon = document.getElementsByName("ai_N1")[0];
-	} catch(e) {
+	} catch(e) {}
+	if(!selectPremierSon || !selectPremierSon.options) {
 		window.console.error(
-			"[Baroufleur] Liste de sons non trouvée - Abandon", e
+			"[Baroufleur] Liste de sons non trouvée - Abandon"
 		);
 		return false;
 	}
@@ -310,6 +311,18 @@ function getSonsDisponibles() {
 			ordreAlphabétiqueSons.push(son);
 			ordreAlphabétiqueEffets.push(son);
 			listeEffets[son] = "";
+			if(!BDD_Sons[son]) {
+				// Si le son est inconnu, on prend effet = nom
+				window.console.warn(
+					"[mmassistant] Le son \'%s\' est inconnu", son
+				);
+				BDD_Sons[son] = {
+					effet: {},
+					description: "???"
+				};
+				BDD_Sons[son].effet[son] = 1;
+				listeEffets[son] = son;
+			}
 			for(effet in BDD_Sons[son].effet) {
 				listeEffets[son] += effet;
 			}
@@ -329,9 +342,10 @@ function getTableComp() {
 // Effectue: définit tableComp
 	try {
 		tableComp = document.querySelector("#mhPlay form table");
-	} catch(e) {
+	} catch(e) {}
+	if(!tableComp || !tableComp.rows) {
 		window.console.error(
-			"[Baroufleur] Table principale non trouvée - Abandon", e
+			"[Baroufleur] Table principale non trouvée - Abandon"
 		);
 		return false;
 	}
@@ -366,7 +380,7 @@ function effetDuSon(son, rang) {
 		}
 	}
 	
-	return 	texte.
+	return texte.
 		replace(/Concentration/, "Conc.").
 		replace(/BM Magiques/, "BMM");
 }
@@ -397,12 +411,6 @@ function initialiseListesSons() {
 				son = son.replace(/-/,"");
 			}
 			son = son.trim();
-			if(!BDD_Sons[son]) {
-				window.console.warn(
-					"[mmassistant] Le son \'%s\' est inconnu", son
-				);
-				continue;
-			}
 			
 			// Ajouter la description
 			option.title = BDD_Sons[son].description;
