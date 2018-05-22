@@ -238,14 +238,14 @@ function ajouteTexte(parent, text, bold, italic) {
 
 function ajouteBouton(parent, value) {
 // Ajoute un bouton de valeur 'value' de classe 'mh_form_submit' à 'parent'
-	var input = document.createElement("input");
-	input.type = "button";
-	input.className = "mh_form_submit";
+	var btn = document.createElement("input");
+	btn.type = "button";
+	btn.className = "mh_form_submit";
 	if(value) {
-		input.value = value;
+		btn.value = value;
 	}
-	parent.appendChild(input);
-	return input;
+	parent.appendChild(btn);
+	return btn;
 }
 
 function ajouteSelect(parent) {
@@ -417,7 +417,7 @@ function ajouteZoneTotal() {
 // Effectue: ajout du td avec l'ul 'baroufleur_effettotal'
 	var
 		tr = tableComp.rows[1],
-		td, ul, input;
+		td, ul;
 	
 	// Insère l'effet total comme 3e colonne dans la table
 	tableComp.rows[0].cells[0].colSpan = 3;
@@ -539,7 +539,7 @@ function initialiseClavier() {
 	var
 		ulRef = document.getElementById("baroufleur_effettotal"),
 		tr, td, span, ul,
-		table, str, std, input, i, j, son;
+		table, str, std, btn, i, j, son;
 	
 	// Création de la ligne contenant le clavier
 	tr = tableComp.insertRow(tableComp.rows.length-2);
@@ -582,10 +582,10 @@ function initialiseClavier() {
 	j=0;
 	for(i=0 ; i<ordreAlphabétiqueSons.length ; i++) {
 		std = str.insertCell(j);
-		input = ajouteBouton(std);
-		input.id = "baroufleur_btn"+i;
-		input.style.margin = "2px";
-		input.onclick = valideNote;
+		btn = ajouteBouton(std);
+		btn.id = "baroufleur_btn"+i;
+		btn.style.margin = "2px";
+		btn.onclick = valideNote;
 		j++;
 		if(j==sonsParLigne) {
 			j=0;
@@ -625,7 +625,7 @@ function majClavier(rangActif) {
 		rang = document.getElementById("baroufleur_rang"),
 		chercheActif = false,
 		ordreDesBoutons = ordreAlphabétiqueSons,
-		i, span, select, son, input;
+		i, span, select, son, btn;
 	if(!rangActif) {
 		chercheActif = true;
 		rangActif = 1;
@@ -655,22 +655,22 @@ function majClavier(rangActif) {
 	
 	// Màj des touches du clavier
 	for(i=0 ; i<ordreDesBoutons.length ; i++) {
-		input = document.getElementById("baroufleur_btn"+i);
-		input.rang = rangActif;
+		btn = document.getElementById("baroufleur_btn"+i);
+		btn.rang = rangActif;
 		son = ordreDesBoutons[i];
-		input.son = son;
+		btn.son = son;
 		switch(modeClavier) {
 			case 1:
-				input.value = son;
-				input.title = BDD_Sons[son].description;
+				btn.value = son;
+				btn.title = BDD_Sons[son].description;
 				break;
 			case 2:
-				input.value = effetDuSon(son, rangActif);
-				input.title = son;
+				btn.value = effetDuSon(son, rangActif);
+				btn.title = son;
 				break;
 			case 3:
-				input.value = son+" ("+effetDuSon(son, rangActif)+")";
-				input.title = BDD_Sons[son].description;
+				btn.value = son+" ("+effetDuSon(son, rangActif)+")";
+				btn.title = BDD_Sons[son].description;
 		}
 	}
 	
