@@ -248,7 +248,7 @@ function ajouteBouton(parent, value) {
 	return input;
 }
 
-function ajouteSelecteur(parent) {
+function ajouteSelect(parent) {
 	var select = document.createElement("select");
 	select.className = "SelectboxV2";
 	parent.appendChild(select);
@@ -398,7 +398,7 @@ function initialiseListesSons() {
 		}
 		
 		// Ajout du Handler
-		selects[0].onchange = onSelectChange;
+		selects[0].onchange = changeDeSonorite;
 		
 		// Passage au select suivant
 		i++;
@@ -567,7 +567,7 @@ function initialiseClavier() {
 		span.id = "baroufleur_son"+i;
 		span.style.cursor = "pointer";
 		span.rang = i;
-		span.onclick = reinitialiseSon;
+		span.onclick = razSon;
 		div.appendChild(span);
 	}
 	td.appendChild(div);
@@ -735,7 +735,7 @@ function ajouteLigneMelodies() {
 	td = tr.insertCell(1);
 	td.className = "mh_tdtitre";
 	ajouteTexte(td, "Clavier: ", true);
-	select = ajouteSelecteur(td);
+	select = ajouteSelect(td);
 	for(i in typesClavier)  {
 		ajouteOption(select, typesClavier[i], i);
 	}
@@ -744,6 +744,11 @@ function ajouteLigneMelodies() {
 }
 
 //--------------------------------- Handlers ---------------------------------//
+
+function changeDeSonorite() {
+// Gère les changements sur les selects (interface classique)
+	majEffetTotal();
+}
 
 function changeModeClavier() {
 // Gère les changements du sélecteur de mode
@@ -773,7 +778,7 @@ function valideNote() {
 	}
 }
 
-function reinitialiseSon() {
+function razSon() {
 // Gère les clics sur les notes de la mélodie
 	var rang = this.rang;
 	document.getElementsByName("ai_N"+rang)[0].value = "";
@@ -795,18 +800,13 @@ function razMelodie() {
 	majClavier();
 }
 
-function onSelectChange() {
-// Gère les changements sur les selects (interface classique)
-	majEffetTotal();
-}
-
 //-------------------------------- Code actif --------------------------------//
 
 if(getSonsDisponibles() && getTableComp()) {
 	initialiseListesSons();
 	ajouteZoneTotal();
 	
-	// Extraction et retypage de baroufleur.mode
+	// Extraction et vérification de baroufleur.mode
 	if(window.localStorage.getItem("baroufleur.mode")) {
 		modeClavier = Number(window.localStorage.getItem("baroufleur.mode"));
 		if(isNaN(modeClavier) || modeClavier<0 || modeClavier>3) {
