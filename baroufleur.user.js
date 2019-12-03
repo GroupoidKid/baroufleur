@@ -3,18 +3,42 @@
 // @namespace    Mountyhall
 // @description  Assistant Baroufle
 // @author       Dabihul
-// @version      0.4.0.1
-// @updateURL    http://weblocal/scripts_externes/baroufleur/baroufleur.user.js
+// @version      1.0.0.0
 // @include      */mountyhall/MH_Play/Actions/Competences/Play_a_Competence43b*
 // @grant        none
 // ==/UserScript==
 
-// Test du webhook, qui a l'air planté...
-
 //---------------------- À l'intention des programmeurs ----------------------//
-
-//...
-
+//
+// Stockage du type de clavier:
+// localStorage["baroufleur.mode"] (number)
+// (cf var. glob. typesClavier)
+//
+// Stockage des mélodies :
+// localStorage["baroufleur.melodies"] (object) {
+//   nomMélodie (string): [
+//     son1 (string),
+//     ...
+//   ]
+// }
+// Les sons sont stockés sous forme de codification MH:
+//  "1": Booong
+//  "2": Bababoum
+//​  "3": Zbouing
+//​  "4": Kliketiiik
+//  "5": Whaaag
+//  "6": Whoooom
+//  "7": Krouiiik
+//  "8": Tagadagada
+//  "9": Tuutuuuut
+// "10": Praaaouuut
+// "11": Kssksss
+// "​12": Gaaaw
+// "​13": Huitsch
+// "​14": Ytseukayndof
+// "​15": Sssrileur
+// "​16": Ghimighimighimi
+//
 //---------------------------- Variables Globales ----------------------------//
 
 var url = window.location.pathname;
@@ -64,57 +88,65 @@ var
 //		},
 //		description: "description"
 //	},
-	"Bababoum"    : {
+	"Bababoum" : {
 		effet: {
 			"Att": 1
 		},
 		description: "Attaque +1 par seuil dépensé"
 	},
-	"Booong"      : {
+	"Booong" : {
 		effet: {
 			"Deg": 1,
 			"Esq": -1
 		},
 		description: "Dégâts +1 | Esquive -1 par seuil dépensé"
 	},
-	"Gaaaw"       : {
+	"Gaaaw" : {
 		effet: {
 			"Fatigue": 1
 		},
 		description: "Fatigue +1 par seuil dépensé"
 	},
-	"Huitsch"     : {
+	"Ghimighimighimi" : {
+		seuil: 1,
+		multiple: false,
+		effet: {
+			"Sur soi": 1
+		},
+		description: "Effet sur soi (seuil 1)"
+	},
+	"Huitsch" : {
 		effet: {
 			"Deg": -1
 		},
 		description: "Dégâts -1 par seuil dépensé"
 	},
-	"Kliketiiik"  : {
+	"Kliketiiik" : {
 		effet: {
 			"Esq": -1,
 			"Concentration": -1
 		},
 		description: "Esquive -1 | Concentration -1 par seuil dépensé"
 	},
-	"Krouiiik"    : {
+	"Krouiiik" : {
 		effet: {
 			"Concentration": -2
 		},
 		description: "Concentration -2 par seuil dépensé"
 	},
-	"Kssksss"     : {
+	"Kssksss" : {
 		effet: {
 			"Esq": 1
 		},
 		description: "Esquive +1 par seuil dépensé"
 	},
-	"Praaaouuut"  : {
+	"Praaaouuut" : {
 		effet: {
 			"Reg": -1
 		},
 		description: "Régénération -1 par seuil dépensé"
 	},
-	"Sssrileur"   : {
+	"Sssrileur" : {
 		seuil: 6,
 		multiple: false,
 		effet: {
@@ -122,7 +154,7 @@ var
 		},
 		description: "Rend visible (seuil 6)"
 	},
-	"Tagadagada"  : {
+	"Tagadagada" : {
 		seuil: 2,
 		multiple: true,
 		effet: {
@@ -130,13 +162,13 @@ var
 		},
 		description: "Durée +1 par 2 seuils dépensés"
 	},
-	"Tuutuuuut"   : {
+	"Tuutuuuut" : {
 		effet: {
 			"Att": -1
 		},
 		description: "Attaque -1 par seuil dépensé"
 	},
-	"Whaaag"      : {
+	"Whaaag" : {
 		seuil: 4,
 		multiple: true,
 		effet: {
@@ -144,13 +176,13 @@ var
 		},
 		description: "Portée horizontale +1 par 4 seuils dépensés"
 	},
-	"Whoooom"     : {
+	"Whoooom" : {
 		effet: {
 			"Concentration": 2
 		},
 		description: "Concentration +2 par seuil dépensé"
 	},
-	"Ytseukayndof": {
+	"Ytseukayndof" : {
 		seuil: 2,
 		multiple: false,
 		effet: {
@@ -158,7 +190,7 @@ var
 		},
 		description: "Rend les bonus magiques (seuil 2)"
 	},
-	"Zbouing"     : {
+	"Zbouing" : {
 		effet: {
 			"Reg": 1
 		},
@@ -980,11 +1012,11 @@ if(getSonsDisponibles() && getTableComp()) {
 	}
 }
 
-window.console.debug(
-	objSonParCode,
-	objCodeDuSon,
-	ordreAlphabétiqueSons,
-	ordreAlphabétiqueEffets
-);
+// window.console.debug(
+// 	objSonParCode,
+// 	objCodeDuSon,
+// 	ordreAlphabétiqueSons,
+// 	ordreAlphabétiqueEffets
+// );
 
 window.console.log("[Baroufleur] Script OFF sur: %s", url);
